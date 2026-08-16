@@ -1,53 +1,143 @@
-# Matcha — Kit pour agents de coding
+# Matcha — Site de rencontre (École 42)
 
-Fichiers du kit :
-- **`SPEC.md`** — les specs complètes (transcription fidèle du PDF v6.0 + recommandations). À donner à l'agent.
-- **`CHECKLIST.md`** — la checklist de tests pour vérifier le travail et préparer la soutenance.
+Site de rencontre complet : inscription, profils, suggestions intelligentes,
+like/match, chat et notifications en temps réel. Implémentation **Slim 4 (PHP)**
+conforme aux spécifications du sujet 42 v6.0.
 
-## Stack validée : Slim 4 / PHP
-- **Backend** : **Slim 4** (PHP 8.x) — micro-framework conforme (routeur + middleware, pas d'ORM).
-- **Templating** : **Twig** (`slim/twig-view`).
-- **Base** : **MySQL / MariaDB** via **PDO**, requêtes SQL écrites à la main (mini-lib `src/Db/Query.php` maison).
-- **Auth/sessions/validation/CSRF** : code maison (interdit dans le micro-framework → on le code soi-même).
-- **Temps réel** : **polling AJAX 5 s** (suffit pour la contrainte ≤ 10 s), WebSocket Ratchet en option.
-- **Images** : extension **GD** + validation magic bytes.
-- **Seed** : **Faker** (`fakerphp/faker`) pour 500+ profils.
-- **Déploiement** : docker-compose (php-apache + mysql + mailhog).
+## Fonctionnalités (partie obligatoire)
 
-❌ Interdits : Symfony, Laravel, Doctrine, Eloquent, gestionnaires de comptes, validateurs intégrés, Silex.
-✅ Autorisés : React, Vue, Angular, Bootstrap, et toutes les bibliothèques nécessaires (Faker, phpdotenv…).
+- **Auth** : inscription (email, username, nom, prénom, mot de passe sécurisé +
+  blacklist des mots de passe anglais courants), vérification par e-mail à lien
+  unique, connexion, mot de passe oublié, déconnexion en un clic.
+- **Profil** : genre, préférences sexuelles, biographie, tags réutilisables avec
+  autocomplétion, jusqu'à 5 photos (dont une photo de profil), note de
+  popularité publique, localisation GPS avec **consentement explicite** ou
+  saisie manuelle obligatoire, « qui a consulté mon profil », « qui m'a liké ».
+- **Suggestions intelligentes** : compatibilité d'orientation (bisexuel par
+  défaut si non renseigné), même zone géographique prioritaire, tags partagés,
+  popularité. Liste triable et filtrable (âge, localisation, popularité, tags).
+- **Recherche avancée** : critères combinés (tranche d'âge, plage de
+  popularité, localisation, un ou plusieurs tags), résultats triables/filtrables.
+- **Consultation de profil** : toutes les infos sauf e-mail/mot de passe,
+  historique de visites, like (refusé côté serveur sans photo de profil),
+  like mutuel = « connectés », unlike, blocage, signalement, statut en ligne.
+- **Chat temps réel** (≤ 10 s) : réservé aux utilisateurs connectés, coupé
+  réellement après unlike/blocage, badge global de nouveaux messages.
+- **Notifications temps réel** (≤ 10 s) : les 5 événements (like, visite,
+  message, like en retour, unlike), compteur global de non-lues.
 
-## Comment l'utiliser avec un agent de coding
+## Stack
 
-### Option A — un seul agent, tout le projet (recommandé pour démarrer)
+| Composant | Choix |
+|---|---|
+| Framework | **Slim 4** (micro-framework de la liste officielle : routeur + templating, sans ORM ni gestionnaire de comptes) |
+| Templating | **Twig** (échappement HTML automatique) |
+| Base de données | **MySQL 8** via **PDO** — requêtes SQL écrites à la main (mini-lib `App\Db\Query`), prepared statements systématiques |
+| Auth / validation / CSRF | code maison (`App\Security`, `App\Validation`, `App\Middleware\CsrfMiddleware`) |
+| Temps réel | **polling AJAX 5 s** (`/api/poll` + `/api/messages/{id}`) — délai de réception ≤ 10 s garanti |
+| Images | extension GD + validation par magic bytes (`getimagesize`) |
+| Mail | client SMTP maison → **MailHog** en développement |
+| Seed | **Faker** (`fakerphp/faker`) — 520 profils, photos générées localement (GD) |
+| Déploiement | **docker-compose** : php-apache + mysql + mailhog |
+
+## Démarrage rapide
+
+```bash
+cp .env.example .env        # réglages locaux (jamais commité)
+docker compose up -d --build
+docker compose exec web php scripts/migrate.php   # schéma (idempotent)
+docker compose exec web php scripts/seed.php --force   # 520 profils de démo
 ```
-Lis le fichier SPEC.md du projet Matcha et implémente-le intégralement avec Slim 4 (PHP) :
-- stack imposée : Slim 4 + Twig + PDO/MySQL (requêtes SQL à la main, PAS d'ORM), sessions
-  PHP natives, auth/validation/CSRF codés maison, polling AJAX 5s pour le temps réel, seed Faker
-- partie obligatoire : auth (inscription + vérification email + reset + déconnexion, blacklist
-  des mots de passe anglais), profil complet (tags, 5 photos, popularité, géolocalisation avec
-  consentement), suggestions intelligentes (orientation, proximité, tags, popularité),
-  recherche avancée, consultation de profil (like/unlike, blocage, signalement), chat temps
-  réel ≤ 10s, notifications temps réel ≤ 10s (les 5 événements)
-- puis les bonus, seulement une fois l'obligatoire parfait
-Contraintes absolues : zéro erreur/warning/notice serveur et client, sécurité sans faille
-(mdp hachés, anti-SQLi, anti-XSS, validation uploads), .env hors git, seed de 500+ profils.
-Vérifie ton travail avec CHECKLIST.md et corrige tout ce qui ne passe pas.
+
+- Application : <http://localhost:8090>
+- MailHog (boîte mail de dev) : <http://localhost:8026>
+
+### Comptes de démonstration
+
+Les profils seed ont tous le mot de passe **`SeedPass123!`** (username affiché
+dans les suggestions, ex. `brun.etienne`). Les e-mails de vérification /
+réinitialisation sont visibles dans MailHog.
+
+## Note de popularité — formule documentée
+
+> **Popularité = (likes reçus) + 2 × (matchs actifs) − (unlikes reçus)**
+
+- Un **match** = like mutuel encore en vigueur ;
+- Un **unlike** est tracé (table `unlikes`) et compte négativement ;
+- La note est **plafonnée entre 0 et 10**, arrondie à 2 décimales ;
+- Elle est **recalculée à chaque like / unlike** par `PopularityService` et
+  identique partout où elle est affichée ou triée (profil, suggestions,
+  recherche, cartes).
+
+## Choix techniques
+
+- **Orientation non renseignée = bisexuel** (règle du sujet) : un profil sans
+  orientation est suggéré à tous les genres et reçoit des suggestions de tous
+  les genres compatibles.
+- **Compatible d'orientation (croisée)** : un profil `A` est suggéré à `B` si
+  `A` peut être intéressé par `B` **et** `B` par `A` (hétéro → genre opposé,
+  homo → même genre, bi → tous, genre « autre » réservé aux profils bi).
+- **Suggestions** : score = `+100` si même zone (distance < 10 km ou même
+  ville) + `2 × tags partagés` + note de popularité ; tri par score par défaut.
+- **Temps réel** : le polling 5 s rafraîchit les badges (messages, notifications)
+  sur toutes les pages et le fil de chat ouvert — délai observé < 10 s.
+- **Blocage / unlike** : coupe réellement côté serveur — le chat refuse l'envoi
+  sans like mutuel, le profil bloqué disparaît des recherches et ne génère plus
+  de notifications.
+- **Uploads** : validation par magic bytes, renommage systématique,
+  `public/assets/uploads/.htaccess` interdit toute exécution de script.
+
+## Sécurité
+
+- Mots de passe **jamais en clair** : `password_hash()` / `password_verify()` (bcrypt).
+- **Anti-SQLi** : prepared statements sur 100 % des requêtes.
+- **Anti-XSS** : échappement Twig systématique (jamais `|raw`).
+- **Anti-CSRF** : jeton en session exigé sur tout POST (champ ou en-tête `X-CSRF-Token`).
+- **Sessions** : `session_regenerate_id()` à la connexion, cookie `HttpOnly`,
+  `SameSite=Lax`, `use_strict_mode`.
+- **Validation des entrées et des uploads** côté serveur uniquement.
+- `.env` local exclu de git (voir `.gitignore`).
+
+## Scripts
+
+| Script | Usage |
+|---|---|
+| `scripts/migrate.php` | Applique `database/schema.sql` (idempotent) |
+| `scripts/seed.php` | Génère 520 profils Faker + interactions (`--force` pour régénérer) |
+
+## Structure
+
+```
+public/            # document root (bootstrap Slim, assets, uploads protégés)
+src/Controllers/   # Auth, Profile, Suggest, Search, User, Chat, Notification, Api
+src/Middleware/    # Session, Csrf, Auth, ViewGlobals
+src/Services/      # Matching, Popularity, Photo, Mail, Message, Notification
+src/Db/            # Query (mini-lib PDO maison) + ConnectionFactory
+src/Validation/    # Validator maison
+src/Security/      # PasswordPolicy (blacklist + complexité)
+templates/         # Twig (layout responsive en-tête/main/pied)
+config/            # settings + définitions du conteneur php-di
+database/schema.sql
+docker/            # Dockerfile php-apache, php.ini, vhost
 ```
 
-### Option B — un agent par partie (projet par étapes)
-1. Agent 1 : « Squelette Slim 4 : composer require slim/slim slim/psr7 slim/twig-view, bootstrap public/index.php, layout Twig en-tête/main/pied responsive, docker-compose (apache+php, mysql, mailhog), .env, connexion PDO + mini-lib Query (sections 1-2 de SPEC.md). »
-2. Agent 2 : « Auth complète (section 3.1) : inscription, email de vérification, connexion, reset mdp, déconnexion, blacklist mots de passe anglais, middleware Auth + CSRF maison. »
-3. Agent 3 : « Profil (section 3.2) : genre, préférences, bio, tags réutilisables, 5 photos, note de popularité, géolocalisation consentement/manuelle. »
-4. Agent 4 : « Suggestions intelligentes + tri/filtres + recherche avancée (sections 3.3-3.4). »
-5. Agent 5 : « Consultation de profil (section 3.5) : like/unlike, historique de visites, blocage, signalement, statut en ligne. »
-6. Agent 6 : « Chat + notifications temps réel ≤ 10 s (sections 3.6-3.7) : polling AJAX 5 s + badge global dans le layout Twig. »
-7. Agent 7 : « Seed 500+ profils (Faker) + passe la CHECKLIST.md intégralement et corrige tout. »
-8. Agent bonus : « Bonus dans cet ordre : OmniAuth, galerie drag&drop + édition GD, carte interactive, chat vidéo/audio, rendez-vous. »
+## Spécifications et tests
 
-## Rappels
-- La **note de popularité** doit avoir une formule documentée et cohérente (proposition dans SPEC.md section 4).
-- **Orientation non renseignée = bisexuel** — sinon l'algorithme de suggestion est faux.
-- Sans photo de profil, **le like doit être refusé côté serveur**.
-- Tester la version finale avec CHECKLIST.md **dans Firefox et Chrome**, mobile et desktop, avec un chronomètre pour les 10 s.
-- **Pas d'ORM** : c'est le point de contrôle n°1 de la définition du micro-framework à la soutenance.
+- `SPEC.md` — transcription du sujet v6.0 (obligatoire + bonus).
+- `CHECKLIST.md` — checklist de tests pour la soutenance.
+
+---
+
+## Annexe — kit pour agents de coding
+
+Fichiers du kit : **`SPEC.md`** (specs complètes à donner à l'agent),
+**`CHECKLIST.md`** (checklist de tests).
+
+❌ Interdits : Symfony, Laravel, Doctrine, Eloquent, gestionnaires de comptes,
+validateurs intégrés, Silex. ✅ Autorisés : React, Vue, Angular, Bootstrap, et
+toutes les bibliothèques nécessaires (Faker, phpdotenv…).
+
+Rappels : popularité documentée et cohérente ; orientation non renseignée =
+bisexuel ; sans photo de profil, le like doit être refusé côté serveur ; tester
+la version finale avec CHECKLIST.md dans Firefox et Chrome, mobile et desktop,
+chronomètre pour les 10 s ; pas d'ORM (point de contrôle n°1 de la soutenance).
