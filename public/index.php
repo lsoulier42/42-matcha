@@ -46,7 +46,12 @@ $settings = $container->get('settings');
  */
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
-$app->add(new App\Middleware\ViewGlobalsMiddleware($container->get(Slim\Views\Twig::class), $settings));
+$app->add(new App\Middleware\ViewGlobalsMiddleware(
+    $container->get(Slim\Views\Twig::class),
+    $settings,
+    $container->get(App\Services\MessageService::class),
+    $container->get(App\Services\NotificationService::class)
+));
 $app->add(new App\Middleware\CsrfMiddleware());
 $app->add(new App\Middleware\SessionMiddleware($settings['session']));
 $app->addErrorMiddleware($settings['app']['debug'], true, true);

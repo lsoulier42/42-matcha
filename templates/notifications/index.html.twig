@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Notifications — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Notifications</h1>
+
+{% if items|length > 0 %}
+    <div class="notification-list">
+        {% for item in items %}
+            <div class="notification-item {{ item.read_at is null ? 'unread' : '' }}">
+                <div class="notification-avatar">
+                    {% if item.avatar %}
+                        <img src="{{ app_url }}{{ item.avatar }}" alt="{{ item.prenom }}">
+                    {% else %}
+                        <div class="avatar-placeholder small">{{ (item.prenom ?? '?')|first|upper }}</div>
+                    {% endif %}
+                </div>
+                <div class="notification-body">
+                    <div class="notification-text">
+                        {% if item.username %}
+                            <strong>{{ item.prenom }}</strong> {{ item.label }}
+                        {% else %}
+                            {{ item.label }}
+                        {% endif %}
+                    </div>
+                    <time class="notification-date">{{ item.created_display }}</time>
+                </div>
+                {% if item.type in ['like', 'match', 'message'] and item.username %}
+                    <a class="btn btn-ghost btn-sm" href="/user/{{ item.actor_id }}">Voir</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">Aucune notification pour le moment.</div>
+{% endif %}
+{% endblock %}

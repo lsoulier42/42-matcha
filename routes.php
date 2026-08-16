@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Controllers\ApiController;
 use App\Controllers\AuthController;
+use App\Controllers\ChatController;
 use App\Controllers\HomeController;
+use App\Controllers\NotificationController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
 use App\Controllers\SuggestController;
@@ -58,6 +61,18 @@ return static function (App $app): void {
         $app->post('/user/{id}/block', [UserController::class, 'block']);
         $app->post('/user/{id}/unblock', [UserController::class, 'unblock']);
         $app->post('/user/{id}/report', [UserController::class, 'report']);
+
+        // Chat temps réel (réservé aux matchs)
+        $app->get('/messages', [ChatController::class, 'index']);
+        $app->get('/messages/{id}', [ChatController::class, 'show']);
+        $app->post('/messages/{id}', [ChatController::class, 'send']);
+
+        // Notifications temps réel (les 5 événements)
+        $app->get('/notifications', [NotificationController::class, 'index']);
+
+        // Polling AJAX : badges globaux + fil de chat ouvert
+        $app->get('/api/poll', [ApiController::class, 'poll']);
+        $app->get('/api/messages/{id}', [ChatController::class, 'apiHistory']);
 
         // Autocomplétion des tags existants (AJAX)
         $app->get('/api/tags', [ProfileController::class, 'apiTags']);

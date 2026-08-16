@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Messages</h1>
+
+{% if conversations|length > 0 %}
+    <div class="conversation-list">
+        {% for conv in conversations %}
+            <a class="conversation-item" href="/messages/{{ conv.id }}">
+                <div class="conversation-avatar">
+                    {% if conv.avatar %}
+                        <img src="{{ app_url }}{{ conv.avatar }}" alt="{{ conv.prenom }}">
+                    {% else %}
+                        <div class="avatar-placeholder small">{{ conv.prenom|first|upper }}</div>
+                    {% endif %}
+                </div>
+                <div class="conversation-body">
+                    <div class="conversation-top">
+                        <strong>{{ conv.prenom }}</strong>
+                        <time>{{ conv.last_message_at_display }}</time>
+                    </div>
+                    <div class="conversation-preview {{ conv.unread > 0 ? 'unread' : '' }}">
+                        {% if conv.unread > 0 %}<span class="badge">{{ conv.unread }}</span>{% endif %}
+                        {{ conv.last_message ? conv.last_message : 'Dites bonjour 👋' }}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        Aucune conversation pour l'instant. Liker des profils pour déclencher un match :
+        le chat s'ouvre dès que vous êtes « connectés » avec quelqu'un.
+    </div>
+    <a class="btn btn-primary" href="/suggestions">Voir les suggestions</a>
+{% endif %}
+{% endblock %}

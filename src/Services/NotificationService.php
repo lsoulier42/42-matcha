@@ -55,7 +55,7 @@ final class NotificationService
     public function list(int $userId, int $limit = 50): array
     {
         return $this->db->fetchAll(
-            'SELECT n.id, n.type, n.created_at, n.read_at,
+            'SELECT n.id, n.type, n.actor_id, n.created_at, n.read_at,
                     a.username, a.prenom, a.ville, p.path AS avatar
              FROM notifications n
              LEFT JOIN users a ON a.id = n.actor_id

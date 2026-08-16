@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Discussion avec {{ other.prenom }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="chat" data-chat-user="{{ other_id }}" data-last-id="{{ last_id }}"
+     data-csrf="{{ csrf_token }}" data-base-url="{{ app_url }}">
+
+    <div class="chat-header">
+        <a class="btn btn-ghost btn-sm" href="/messages">←</a>
+        <a class="chat-partner" href="/user/{{ other_id }}">
+            <div class="conversation-avatar">
+                {% if other.avatar %}
+                    <img src="{{ app_url }}{{ other.avatar }}" alt="{{ other.prenom }}">
+                {% else %}
+                    <div class="avatar-placeholder small">{{ other.prenom|first|upper }}</div>
+                {% endif %}
+            </div>
+            <div>
+                <strong>{{ other.prenom }}</strong>
+                <span class="user-meta">{{ other.ville ?? '' }}</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="chat-thread" id="chat-thread">
+        {% for message in history %}
+            <div class="chat-message {{ message.from_user_id == current_user.id ? 'mine' : 'theirs' }}">
+                <div class="chat-bubble">{{ message.content }}</div>
+                <time class="chat-time">{{ message.sent_at|date('H:i') }}</time>
+            </div>
+        {% endfor %}
+    </div>
+
+    <form class="chat-form" id="chat-form" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <textarea name="content" id="chat-input" rows="2" maxlength="2000"
+                  placeholder="Écrivez votre message…" required></textarea>
+        <button class="btn btn-primary" type="submit">Envoyer</button>
+    </form>
+</div>
+{% endblock %}

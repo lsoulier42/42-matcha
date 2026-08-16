@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Services\MessageService;
+use App\Services\NotificationService;
 use App\Support\Flash;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -19,7 +21,9 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private Twig $twig,
-        private array $settings
+        private array $settings,
+        private MessageService $messages,
+        private NotificationService $notifications
     ) {
     }
 
@@ -38,8 +42,14 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
         $env->addGlobal('flash', Flash::pull());
 
         // Badges temps réel : recalculés à chaque requête (polling / pages).
-        $env->addGlobal('unread_messages', $_SESSION['unread_messages'] ?? 0);
-        $env->addGlobal('unread_notifs', $_SESSION['unread_notifs'] ?? 0);
+        $unreadMessages = 0;
+        $unreadNotifs = 0;
+        if ($userId !== null) {
+            $unreadMessages = $this->messages->unreadCount($userId);
+            $unreadNotifs = $this->notifications->unreadCount($userId);
+        }
+        $env->addGlobal('unread_messages', $unreadMessages);
+        $env->addGlobal('unread_notifs', $unreadNotifs);
 
         return $handler->handle($request);
     }

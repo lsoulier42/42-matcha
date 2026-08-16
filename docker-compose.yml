@@ -4,6 +4,8 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
+      # Fuseau aligné sur PHP (date.timezone = Europe/Paris) : NOW() cohérent.
+      TZ: Europe/Paris
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-root_dev_pw}
       MYSQL_DATABASE: ${DB_NAME:-matcha}
       MYSQL_USER: ${DB_USER:-matcha}
@@ -37,6 +39,8 @@ services:
   mailhog:
     image: mailhog/mailhog:v1.0.1
     restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
     ports:
       - "8026:8025"   # interface web MailHog
       - "1026:1025"   # SMTP (utilisé par le MailService maison)

@@ -489,6 +489,188 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
     .user-show-main { grid-template-columns: 1fr; }
 }
 
+/* ---------- Chat ---------- */
+.chat {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+    min-height: 380px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.chat-partner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--c-text);
+    text-decoration: none;
+}
+
+.chat-partner:hover strong { color: var(--c-primary); }
+
+.chat-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: #fff;
+}
+
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+    gap: 0.15rem;
+}
+
+.chat-message.mine { align-self: flex-end; align-items: flex-end; }
+.chat-message.theirs { align-self: flex-start; align-items: flex-start; }
+
+.chat-bubble {
+    padding: 0.55rem 0.8rem;
+    border-radius: 14px;
+    font-size: 0.94rem;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.chat-message.mine .chat-bubble {
+    background: var(--c-primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-message.theirs .chat-bubble {
+    background: var(--c-bg);
+    color: var(--c-text);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-time { font-size: 0.7rem; color: var(--c-text-soft); }
+
+.chat-form {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface);
+}
+
+.chat-form textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.chat-form textarea:focus { outline: 2px solid var(--c-primary); outline-offset: -1px; }
+.chat-form .btn { align-self: flex-end; }
+
+/* Liste des conversations */
+.conversation-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.conversation-item {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    color: var(--c-text);
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: border-color 0.12s;
+}
+
+.conversation-item:hover { border-color: var(--c-primary); }
+
+.conversation-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-placeholder.small {
+    width: 48px;
+    height: 48px;
+    font-size: 1.3rem;
+    border-radius: 50%;
+    aspect-ratio: auto;
+}
+
+.conversation-body { flex: 1; min-width: 0; }
+
+.conversation-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+}
+
+.conversation-top time { color: var(--c-text-soft); font-size: 0.78rem; }
+
+.conversation-preview {
+    color: var(--c-text-soft);
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.conversation-preview.unread { color: var(--c-text); font-weight: 600; }
+
+/* Notifications */
+.notification-list { display: flex; flex-direction: column; gap: 0.55rem; }
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    box-shadow: var(--shadow);
+}
+
+.notification-item.unread { border-left: 4px solid var(--c-primary); background: #fffbfd; }
+
+.notification-item .notification-avatar img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.notification-body { flex: 1; }
+.notification-date { color: var(--c-text-soft); font-size: 0.78rem; }
+.notification-text { font-size: 0.93rem; }
+
 /* ---------- Responsive mobile ---------- */
 @media (max-width: 720px) {
     .nav-toggle { display: inline-block; }

@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Chat indisponible — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Chat indisponible</h1>
+    <div class="alert alert-info">
+        Le chat n'est ouvert qu'entre utilisateurs « connectés » (like mutuel),
+        sans blocage. Cette conversation n'est plus active.
+    </div>
+    <p><a class="btn btn-primary" href="/messages">Retour aux messages</a></p>
+</div>
+{% endblock %}
