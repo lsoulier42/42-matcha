@@ -26,14 +26,71 @@
 
 ---
 
-## 2. Stack recommandée [RECO]
+## 2. Stack retenue : Slim 4 / PHP [RECO]
 
-- **Backend** : **Slim 4 (PHP)** ou **Flask (Python)** ou **Express (Node)** — conforme micro-framework (routeur + templating, pas d'ORM).
-- **Base** : **MySQL / MariaDB** via **PDO** (PHP) avec requêtes SQL écrites à la main.
-- **Temps réel (chat + notifications)** : WebSocket (ou polling ≤ 10 s) ; délai maximum **10 secondes** imposé par le sujet.
-- **Front** : React ou Vue pour l'app, ou vanilla JS + CSS si on préfère la légèreté (les deux sont autorisés).
-- **Seed** : script de génération de **500+ profils factices** (avec Faker ou équivalent — les bibliothèques sont autorisées) pour l'évaluation.
-- **Déploiement** : docker-compose recommandé (pas obligatoire pour Matcha, contrairement à Camagru, mais pratique).
+> Choix validé : **Slim 4 (PHP 8.x)** — micro-framework conforme à la définition du sujet (routeur + templating, sans ORM ni gestionnaire de comptes). Tu restes en PHP, et chaque pièce reste contrôlable.
+
+### 2.1. Composants
+
+| Composant | Choix | Justification |
+|---|---|---|
+| **Framework** | **Slim 4** (php/slim/slim) | Micro-framework de la liste officielle du sujet. Routeur + middleware, rien de plus. |
+| **Templating** | **Twig** (slim/twig-view) | Templating autorisé par la définition du micro-framework ; échappement HTML automatique (anti-XSS gratuit). |
+| **Base de données** | **MySQL / MariaDB** via **PDO** | Requêtes SQL **écrites à la main** (exigence du sujet). Pas d'ORM. |
+| **Couche données** | Mini-classe maison `Query` / `DB` (wrap PDO : `query()`, `fetch()`, `fetchAll()`) | Le sujet encourage explicitement : « si vous êtes malin, vous pouvez créer votre propre bibliothèque pour simplifier la gestion des requêtes ». |
+| **Sessions / auth** | Sessions PHP natives + `password_hash()` / `password_verify()` | Gestionnaire de comptes **interdit** dans le micro-framework → on le code soi-même (simple, ~200 lignes). |
+| **Validation** | `filter_var()` + validation maison dans les contrôleurs | Validateurs intégrés interdits → code maison. |
+| **CSRF** | Middleware maison (jeton en session, 30 lignes) ou `slim/csrf` | Bibliothèque autorisée, mais le code maison suffit. |
+| **Uploads / images** | Extension **GD** + validation MIME/magic bytes | Incluse avec PHP ; recadrage/rotation pour le bonus galerie. |
+| **Temps réel (chat + notifs)** | **Polling AJAX** (fetch toutes les 5 s) en v1, **WebSocket Ratchet** en option | Le sujet impose ≤ 10 s : le polling à 5 s suffit et zéro dépendance lourde. Ratchet (bibliothèque PHP WebSocket) si tu veux le vrai temps réel. |
+| **Géolocalisation** | API `navigator.geolocation` (JS natif) + saisie manuelle ville/quartier | Consentement explicite RGPD. |
+| **Seed (500+ profils)** | **Faker** (fakerphp/faker) + photos de démo | Les bibliothèques sont autorisées pour Matcha. |
+| **Mail** | `mail()` + **MailHog** en dev (docker) | Simple ; PHPMailer en option. |
+| **Env** | `vlucas/phpdotenv` ou parseur maison | `.env` hors git, obligatoire. |
+| **Déploiement** | **docker-compose** : `php-apache` (ou `php-fpm`+nginx) + `mysql` + `mailhog` | Une commande pour lancer, comme Camagru. |
+
+### 2.2. Structure de projet suggérée
+
+```
+matcha/
+├── public/               # document root
+│   ├── index.php         # bootstrap Slim (AppFactory, routes, middleware)
+│   ├── .htaccess         # (si Apache) réécriture vers index.php
+│   └── assets/           # css, js, uploads protégés
+├── src/
+│   ├── Controllers/      # AuthController, ProfileController, SuggestController,
+│   │                     # SearchController, UserController, ChatController,
+│   │                     # NotificationController
+│   ├── Middleware/       # AuthMiddleware, CsrfMiddleware
+│   ├── Services/         # PopularityService, MatchingService, LocationService,
+│   │                     # NotificationService, MailService
+│   └── Db/               # Query.php (wrap PDO maison), ConnectionFactory.php
+├── templates/            # Twig : base.html.twig, auth/, profile/, gallery/…
+├── routes.php            # définition des routes
+├── config/               # config + chargement .env
+├── scripts/
+│   └── seed.php          # génération 500+ profils (Faker)
+├── database/
+│   └── schema.sql        # schéma complet (migrations manuelles)
+├── docker-compose.yml
+├── .env / .env.example
+└── public/assets/uploads/  # images uploadées (hors git)
+```
+
+### 2.3. Schéma de base (idées) [RECO]
+
+- `users` : id, email, username, nom, prenom, password_hash, genre, orientation, bio, note_popularite, ville, lat, lng, gps_consent, email_verifie, actif, bloque_jusqua, derniere_connexion, created_at.
+- `tags` + `user_tags` (tags réutilisables, table de liaison).
+- `photos` : id, user_id, path, is_profile, position.
+- `likes` : id, from_user_id, to_user_id, created_at (unique from+to).
+- `visits` : id, visitor_id, visited_id, viewed_at.
+- `blocks` : id, blocker_id, blocked_id, created_at.
+- `reports` : id, reporter_id, reported_id, reason, created_at.
+- `messages` : id, from_user_id, to_user_id, content, sent_at, read_at.
+- `notifications` : id, user_id, type (like/visit/message/match/unlike), actor_id, read_at, created_at.
+- `password_resets` : token, user_id, expires_at.
+
+⚠️ **Pas d'ORM** : toutes les requêtes passent par ta mini-lib PDO, avec **requêtes préparées** systématiquement.
 
 ---
 
@@ -135,30 +192,34 @@ Le sujet laisse la définition libre mais exige des **critères cohérents**. Pr
 
 ---
 
-## 7. Ordre d'implémentation conseillé [RECO]
+## 7. Ordre d'implémentation conseillé (Slim 4 / PHP) [RECO]
 
-1. **Squelette** : micro-framework (routeur + templating), base de données, layout en-tête/main/pied responsive, `.env`, connexion DB, mini-bibliothèque de requêtes SQL.
-2. **Auth** : inscription (email, username, nom, prénom, mdp sécurisé + blacklist mots anglais), vérification par email (lien unique), connexion, reset mdp, déconnexion, session sécurisée + CSRF.
-3. **Profil** : genre, préférences, bio, tags réutilisables, 5 photos (dont profil), édition, note de popularité, localisation (GPS consentement / saisie manuelle).
-4. **Matching & navigation** : algorithme de suggestion (orientation sexuelle, proximité, tags partagés, popularité), tri + filtres.
+1. **Squelette Slim 4** : `composer require slim/slim slim/psr7 slim/twig-view`, bootstrap `public/index.php`, layout Twig en-tête/main/pied responsive, docker-compose (apache+php, mysql, mailhog), `.env`, connexion PDO + mini-lib `Query`.
+2. **Auth** : inscription (email, username, nom, prénom, mdp sécurisé + blacklist mots anglais), vérification par email (lien unique), connexion, reset mdp, déconnexion, middleware Auth + CSRF maison.
+3. **Profil** : genre, préférences, bio, tags réutilisables (autocomplétion), 5 photos (dont profil), édition, note de popularité, localisation (GPS consentement / saisie manuelle).
+4. **Matching & navigation** : `MatchingService` (orientation sexuelle, proximité, tags partagés, popularité), tri + filtres.
 5. **Recherche avancée** : critères combinés, tri + filtres.
-6. **Consultation de profil** : affichage, historique de visites, like/unlike, blocage, signalement, statut en ligne.
-7. **Chat temps réel** : WebSocket/polling ≤ 10 s, badge global de nouveaux messages.
-8. **Notifications temps réel** : les 5 événements, compteur global non lues.
-9. **Seed** : script générant **500+ profils** cohérents (avec photos de démo).
-10. **Nettoyage** : zéro erreur/warning/notice (PHP, serveur, console navigateur), tests sécurité, tests mobiles.
-11. **Bonus** (seulement si obligatoire parfait) : OmniAuth → galerie drag&drop → carte interactive → chat vidéo → rendez-vous.
+6. **Consultation de profil** : affichage (sans email), historique de visites, like/unlike, blocage, signalement, statut en ligne.
+7. **Chat temps réel** : polling AJAX 5 s (ou Ratchet), badge global de nouveaux messages.
+8. **Notifications temps réel** : les 5 événements, compteur global non lues (même mécanisme polling).
+9. **Seed** : `scripts/seed.php` avec Faker → **500+ profils** cohérents (photos de démo).
+10. **Nettoyage** : zéro erreur/warning/notice (PHP `error_reporting(E_ALL)`, logs, console navigateur), tests sécurité, tests mobiles.
+11. **Bonus** (seulement si obligatoire parfait) : OmniAuth → galerie drag&drop + GD → carte interactive → chat vidéo/audio → rendez-vous.
 
 ---
 
 ## 8. Pièges connus (à vérifier en fin de projet)
 
 - ⚠️ **500 profils minimum** : sans seed, l'évaluation est impossible — vérifier `SELECT COUNT(*)` avant la soutenance.
-- ⚠️ **Le chat/notifications doivent être temps réel** : un délai > 10 s = non conforme (tester avec chronomètre).
+- ⚠️ **Le chat/notifications doivent être temps réel** : un délai > 10 s = non conforme (tester avec chronomètre). Le polling 5 s passe, mais le badge global doit être mis à jour sur **toutes** les pages (layout Twig commun).
 - ⚠️ **Blacklist des mots de passe anglais courants** : oubliée par 90 % des projets, pourtant explicite dans le sujet.
 - ⚠️ **Like sans photo de profil** : doit être refusé côté serveur, pas seulement caché côté client.
 - ⚠️ **Unblock/unlike** : le chat et les notifications doivent être **réellement coupés**, pas juste masqués.
 - ⚠️ **Orientation par défaut** : profil sans orientation = bisexuel (sinon les suggestions sont fausses).
-- ⚠️ **Zéro notice PHP** : une simple variable non définie dans une vue peut faire perdre des points — `error_reporting(E_ALL)` en dev, logs propres.
+- ⚠️ **Zéro notice PHP** : une simple variable non définie dans une vue peut faire perdre des points — `error_reporting(E_ALL)` en dev, logs propres, `display_errors=0` en prod.
 - ⚠️ **Géolocalisation** : pas de consentement explicite = faille RGPD évoquée à la soutenance.
 - ⚠️ **Requêtes SQL à la main** : pas d'ORM (Doctrine, Eloquent, SQLAlchemy…) — c'est un point de contrôle de la définition du micro-framework.
+- ⚠️ **Twig = échappement auto** : ne pas utiliser `|raw` sans nécessité (anti-XSS). Échapper aussi les attributs.
+- ⚠️ **Slim 4 PSR-7** : les body parsers pour JSON (`application/json`) doivent être ajoutés si tu fais de l'AJAX fetch — sinon `$request->getParsedBody()` est vide.
+- ⚠️ **Sessions** : démarrer la session dans un middleware (ou `Session::start()` au bootstrap), jamais dans une vue Twig.
+- ⚠️ **Uploads dans public/** : stocker hors du document root ou dans un dossier protégé, servir via une route contrôlée (pas d'exécution de scripts uploadés).
