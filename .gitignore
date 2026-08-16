@@ -13,6 +13,9 @@ composer.lock
 # Cache & logs applicatifs
 /var/
 
+# Artefacts de session ZCode (plans, etc.)
+/.zcode/
+
 # Photos uploadées par les utilisateurs (jamais dans git)
 /public/assets/uploads/*
 !/public/assets/uploads/.htaccess
