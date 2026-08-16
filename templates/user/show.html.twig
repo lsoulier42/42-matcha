@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ user.prenom }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="user-show">
+    <div class="user-show-main">
+        <div class="user-show-photo">
+            {% if photos|length > 0 %}
+                {% set main = photos|filter(p => p.is_profile)|first %}
+                {% if main %}
+                    <img src="{{ app_url }}{{ main.path }}" alt="{{ user.prenom }}" class="main-photo">
+                {% else %}
+                    <div class="avatar-placeholder big">{{ user.prenom|first|upper }}</div>
+                {% endif %}
+            {% else %}
+                <div class="avatar-placeholder big">{{ user.prenom|first|upper }}</div>
+            {% endif %}
+        </div>
+
+        <div class="user-show-info">
+            <h1>{{ user.prenom }} {% if user.age is not null %}({{ user.age }} ans){% endif %}</h1>
+
+            <p class="status-line">
+                {% if user.is_online %}
+                    <span class="online-dot"></span> En ligne
+                {% else %}
+                    <span class="offline-dot"></span> Dernière connexion {{ user.last_seen }}
+                {% endif %}
+            </p>
+
+            <p class="user-meta">📍 {{ user.ville ?? 'Localisation inconnue' }}</p>
+            <p class="user-meta">⭐ Popularité {{ user.popularity_display }}/10</p>
+            <p class="user-meta">Genre : {{ user.genre == 'homme' ? 'Homme' : (user.genre == 'femme' ? 'Femme' : (user.genre == 'autre' ? 'Autre' : 'Non renseigné')) }}</p>
+            <p class="user-meta">
+                Préférences : {{ user.orientation == 'hetero' ? 'Hétérosexuel(le)' : (user.orientation == 'homo' ? 'Homosexuel(le)' : (user.orientation == 'bi' ? 'Bisexuel(le)' : 'Bisexuel(le) par défaut')) }}
+            </p>
+
+            {% if user.bio %}
+                <h2>Biographie</h2>
+                <p class="user-bio">{{ user.bio }}</p>
+            {% endif %}
+
+            {% if tags|length > 0 %}
+                <h2>Centres d'intérêt</h2>
+                <div class="tag-list">
+                    {% for tag in tags %}
+                        <span class="tag-chip">#{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if photos|length > 1 %}
+                <h2>Galerie</h2>
+                <div class="photo-grid">
+                    {% for photo in photos %}
+                        <div class="photo-item">
+                            <img src="{{ app_url }}{{ photo.path }}" alt="Photo {{ loop.index }}" loading="lazy">
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============ Actions ============ -->
+    <section class="form-card user-actions">
+        {% if is_match %}
+            <div class="alert alert-success">❤️ Vous êtes connectés ! Le chat est débloqué.</div>
+        {% elseif liked_me %}
+            <div class="alert alert-info">Cette personne vous a liké.</div>
+        {% elseif i_liked %}
+            <div class="alert alert-info">Vous avez liké ce profil.</div>
+        {% endif %}
+
+        <div class="form-actions">
+            {% if is_match %}
+                <a class="btn btn-primary" href="/messages/{{ user.id }}">💬 Discuter</a>
+            {% elseif not i_liked %}
+                <form method="post" action="/user/{{ user.id }}/like">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="btn btn-primary" type="submit">❤️ Liker</button>
+                </form>
+            {% endif %}
+
+            {% if i_liked %}
+                <form method="post" action="/user/{{ user.id }}/unlike">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="btn btn-outline" type="submit">Retirer le like</button>
+                </form>
+            {% endif %}
+
+            <form method="post" action="/user/{{ user.id }}/block"
+                  onsubmit="return confirm('Bloquer {{ user.prenom }} ? Il disparaîtra de vos recherches.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn btn-ghost" type="submit">🚫 Bloquer</button>
+            </form>
+        </div>
+
+        <form method="post" action="/user/{{ user.id }}/report" class="report-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-field">
+                <label for="reason">Signaler ce profil (faux compte…)</label>
+                <div class="report-row">
+                    <select id="reason" name="reason" required>
+                        <option value="Faux compte">Faux compte</option>
+                        <option value="Spam">Spam</option>
+                        <option value="Propos inappropriés">Propos inappropriés</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                    <button class="btn btn-danger" type="submit">🚩 Signaler</button>
+                </div>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

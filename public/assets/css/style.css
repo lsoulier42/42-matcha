@@ -443,6 +443,52 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
 
 .search-hint { color: var(--c-text-soft); margin: 0 0 1rem; }
 
+/* ---------- Profil public (consultation) ---------- */
+.user-show { display: grid; gap: 1.2rem; }
+
+.user-show-main {
+    display: grid;
+    grid-template-columns: minmax(220px, 340px) 1fr;
+    gap: 1.4rem;
+    align-items: start;
+}
+
+.user-show-photo .main-photo {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--c-border);
+    box-shadow: var(--shadow);
+}
+
+.avatar-placeholder.big { font-size: 4.5rem; }
+
+.user-show-info h1 { margin: 0 0 0.3rem; }
+.user-show-info h2 { font-size: 1.05rem; margin: 1.1rem 0 0.4rem; }
+
+.status-line { font-weight: 600; margin: 0.2rem 0; }
+
+.online-dot, .offline-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+}
+
+.online-dot { background: var(--c-online); }
+.offline-dot { background: #bdb7b3; }
+
+.user-actions { max-width: none; }
+.report-form { border-top: 1px solid var(--c-border); margin-top: 1rem; padding-top: 0.8rem; }
+.report-row { display: flex; gap: 0.5rem; }
+.report-row select { flex: 1; }
+
+@media (max-width: 720px) {
+    .user-show-main { grid-template-columns: 1fr; }
+}
+
 /* ---------- Responsive mobile ---------- */
 @media (max-width: 720px) {
     .nav-toggle { display: inline-block; }

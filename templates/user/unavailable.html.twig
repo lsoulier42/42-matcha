@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil indisponible — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Profil indisponible</h1>
+    <div class="alert alert-info">{{ reason }}</div>
+    <p><a class="btn btn-primary" href="/suggestions">Retour aux suggestions</a></p>
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@ use App\Controllers\HomeController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
 use App\Controllers\SuggestController;
+use App\Controllers\UserController;
 use App\Middleware\AuthMiddleware;
 use Slim\App;
 
@@ -49,6 +50,14 @@ return static function (App $app): void {
         // Suggestions intelligentes + recherche avancée
         $app->get('/suggestions', [SuggestController::class, 'index']);
         $app->get('/search', [SearchController::class, 'index']);
+
+        // Consultation de profil : like/unlike, blocage, signalement
+        $app->get('/user/{id}', [UserController::class, 'show']);
+        $app->post('/user/{id}/like', [UserController::class, 'like']);
+        $app->post('/user/{id}/unlike', [UserController::class, 'unlike']);
+        $app->post('/user/{id}/block', [UserController::class, 'block']);
+        $app->post('/user/{id}/unblock', [UserController::class, 'unblock']);
+        $app->post('/user/{id}/report', [UserController::class, 'report']);
 
         // Autocomplétion des tags existants (AJAX)
         $app->get('/api/tags', [ProfileController::class, 'apiTags']);
