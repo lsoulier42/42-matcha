@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Carte — {{ app_name }}{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
+{% block content %}
+<h1>Carte des utilisateurs</h1>
+
+{% if me.lat is not null %}
+    <p class="search-hint">Votre position : <strong>{{ me.prenom }}</strong> — les marqueurs roses sont des profils suggérés, cliquez pour les découvrir.</p>
+{% else %}
+    <div class="alert alert-info">
+        Ajoutez votre localisation (GPS ou manuelle) dans <a href="/profile">votre profil</a>
+        pour voir les profils autour de vous.
+    </div>
+{% endif %}
+
+<div id="map" class="interactive-map"></div>
+
+<div id="map-fallback" class="alert alert-info" hidden>
+    La carte interactive nécessite une connexion Internet (tuiles OpenStreetMap).
+    Utilisez la <a href="/suggestions">liste des suggestions</a> à la place.
+</div>
+
+{% if markers|length > 0 %}
+    <p class="map-count">{{ markers|length }} profil(s) positionné(s) affiché(s)</p>
+{% endif %}
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    (function () {
+        'use strict';
+        var mapEl = document.getElementById('map');
+        var fallback = document.getElementById('map-fallback');
+        var markers = {{ markers|json_encode|raw }};
+        var me = {{ me|json_encode|raw }};
+
+        if (typeof L === 'undefined') {
+            mapEl.hidden = true;
+            fallback.hidden = false;
+            return;
+        }
+
+        var center = (me.lat !== null && me.lng !== null)
+            ? [me.lat, me.lng]
+            : (markers.length > 0 ? [markers[0].lat, markers[0].lng] : [46.6, 2.4]);
+
+        var map = L.map('map').setView(center, 12);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        if (me.lat !== null && me.lng !== null) {
+            L.marker([me.lat, me.lng], { title: me.prenom })
+                .addTo(map)
+                .bindPopup('<strong>' + me.prenom + '</strong><br>Vous');
+        }
+
+        markers.forEach(function (marker) {
+            var popup = '<strong>' + marker.prenom + '</strong><br>'
+                + (marker.ville || 'Localisation inconnue') + '<br>'
+                + '⭐ Popularité ' + marker.popularity_display + '/10<br>'
+                + '<a href="/user/' + marker.id + '">Voir le profil</a>';
+            L.marker([marker.lat, marker.lng], { title: marker.prenom })
+                .addTo(map)
+                .bindPopup(popup);
+        });
+    })();
+</script>
+{% endblock %}

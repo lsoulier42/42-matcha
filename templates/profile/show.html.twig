@@ -101,10 +101,10 @@
     <section class="form-card profile-card">
         <h2>Photos <span class="photo-count">{{ photos|length }}/5</span></h2>
 
-        <div class="photo-grid">
+        <div class="photo-grid" id="photo-grid">
             {% for photo in photos %}
-                <div class="photo-item {{ photo.is_profile ? 'is-profile' : '' }}">
-                    <img src="{{ app_url }}{{ photo.path }}" alt="Photo {{ loop.index }}" loading="lazy">
+                <div class="photo-item {{ photo.is_profile ? 'is-profile' : '' }}" data-photo-id="{{ photo.id }}">
+                    <img src="{{ app_url }}{{ photo.path }}?v={{ photo.id }}" alt="Photo {{ loop.index }}" loading="lazy">
                     {% if photo.is_profile %}<span class="photo-tag">Photo de profil</span>{% endif %}
                     <div class="photo-actions">
                         {% if not photo.is_profile %}
@@ -113,18 +113,54 @@
                                 <button class="btn btn-ghost btn-sm" type="submit">Définir comme photo de profil</button>
                             </form>
                         {% endif %}
-                        <form method="post" action="/profile/photo/{{ photo.id }}/delete"
-                              onsubmit="return confirm('Supprimer cette photo ?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
-                        </form>
+                        <div class="photo-actions-row">
+                            <button class="btn btn-ghost btn-sm" type="button" data-open-editor="{{ photo.id }}">✏️ Modifier</button>
+                            <form method="post" action="/profile/photo/{{ photo.id }}/delete"
+                                  onsubmit="return confirm('Supprimer cette photo ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
 
+        {# Éditeur d'image (bonus galerie) #}
+        <div class="photo-editor" id="photo-editor" hidden>
+            <h3>Éditer la photo</h3>
+            <div class="editor-layout">
+                <div class="editor-canvas-wrap">
+                    <canvas id="editor-canvas" width="320" height="320"></canvas>
+                </div>
+                <div class="editor-controls">
+                    <form method="post" action="/profile/photo/0/rotate" id="editor-rotate-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="degrees" value="90">
+                        <button class="btn btn-ghost btn-sm" type="submit">⟳ Pivoter 90°</button>
+                    </form>
+                    <form method="post" action="/profile/photo/0/filter" id="editor-filter-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <select name="filter">
+                            <option value="grayscale">Noir &amp; blanc</option>
+                            <option value="sepia">Sépia</option>
+                            <option value="negative">Négatif</option>
+                            <option value="blur">Flou</option>
+                        </select>
+                        <button class="btn btn-ghost btn-sm" type="submit">Appliquer le filtre</button>
+                    </form>
+                    <div class="editor-crop">
+                        <label for="crop-size">Taille du recadrage</label>
+                        <input type="range" id="crop-size" min="40" max="100" value="70">
+                        <button class="btn btn-ghost btn-sm" type="button" id="editor-crop-btn">Recadrer</button>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" type="button" id="editor-close">Fermer</button>
+                </div>
+            </div>
+        </div>
+
         {% if photos|length < 5 %}
-            <form method="post" action="/profile/photo" enctype="multipart/form-data" class="upload-form">
+            <form method="post" action="/profile/photo" enctype="multipart/form-data" class="upload-form" id="upload-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-field">
                     <label for="photo">Ajouter une photo (PNG, JPG, GIF, WebP — 5 Mo max)</label>
@@ -132,6 +168,9 @@
                 </div>
                 <button class="btn btn-primary" type="submit">Téléverser</button>
             </form>
+            <div class="drop-zone" id="drop-zone">
+                <p>📥 ou glissez-déposez une image ici</p>
+            </div>
         {% endif %}
     </section>
 

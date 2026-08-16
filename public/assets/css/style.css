@@ -365,6 +365,72 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
     font-size: 0.92rem;
 }
 
+/* ---------- Bonus galerie : drop zone + éditeur ---------- */
+.drop-zone {
+    border: 2px dashed var(--c-border);
+    border-radius: 10px;
+    text-align: center;
+    padding: 0.8rem;
+    margin-top: 0.8rem;
+    color: var(--c-text-soft);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.drop-zone.dragover {
+    border-color: var(--c-primary);
+    background: #fdeef3;
+    color: var(--c-primary-dark);
+}
+
+.drop-zone p { margin: 0; font-size: 0.9rem; }
+
+.photo-actions-row { display: flex; gap: 0.3rem; align-items: center; }
+.photo-actions-row form { margin: 0; }
+
+.photo-editor {
+    border-top: 1px solid var(--c-border);
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+}
+
+.photo-editor h3 { margin: 0 0 0.6rem; font-size: 1rem; }
+
+.editor-layout {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.editor-canvas-wrap canvas {
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: #fff;
+    cursor: move;
+    touch-action: none;
+}
+
+.editor-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.editor-controls form { display: flex; gap: 0.4rem; align-items: center; }
+.editor-controls select {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.88rem;
+}
+
+.editor-crop { display: flex; flex-direction: column; gap: 0.3rem; }
+.editor-crop label { font-size: 0.85rem; color: var(--c-text-soft); }
+
 .profile-links { align-items: center; gap: 0.7rem; flex-wrap: wrap; }
 .popularity { font-size: 0.95rem; }
 
@@ -442,6 +508,45 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
 .filter-panel select[multiple] { min-height: 96px; }
 
 .search-hint { color: var(--c-text-soft); margin: 0 0 1rem; }
+
+/* ---------- Carte interactive (bonus) ---------- */
+.interactive-map {
+    height: 480px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 1;
+}
+
+.map-count { color: var(--c-text-soft); font-size: 0.85rem; }
+
+/* ---------- Rendez-vous (bonus) ---------- */
+.appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.appointment-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.appointment-item {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    background: var(--c-bg);
+}
+
+.appointment-item.past { opacity: 0.65; }
+
+.appointment-item form { margin: 0; margin-left: auto; }
+
+.appointment-date { min-width: 110px; font-size: 0.85rem; }
+.appointment-body { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
+.appointment-body p { margin: 0; }
 
 /* ---------- Profil public (consultation) ---------- */
 .user-show { display: grid; gap: 1.2rem; }

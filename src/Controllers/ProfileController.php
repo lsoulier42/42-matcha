@@ -187,6 +187,47 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
+    // Bonus galerie : édition d'image de base (GD)
+    // -------------------------------------------------------------
+
+    public function rotatePhoto(Request $request, Response $response, array $args): Response
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $degrees = (int) (($request->getParsedBody() ?? [])['degrees'] ?? 90);
+        $ok = $this->photos->rotate($userId, (int) ($args['id'] ?? 0), $degrees);
+        Flash::set($ok ? 'success' : 'error', $ok ? 'Photo pivotée.' : 'Rotation impossible sur cette photo.');
+        $this->refreshSession($userId);
+        return $response->withHeader('Location', '/profile')->withStatus(302);
+    }
+
+    public function filterPhoto(Request $request, Response $response, array $args): Response
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $filter = (string) (($request->getParsedBody() ?? [])['filter'] ?? '');
+        $ok = $this->photos->applyFilter($userId, (int) ($args['id'] ?? 0), $filter);
+        Flash::set($ok ? 'success' : 'error', $ok ? 'Filtre appliqué.' : 'Filtre inconnu.');
+        $this->refreshSession($userId);
+        return $response->withHeader('Location', '/profile')->withStatus(302);
+    }
+
+    public function cropPhoto(Request $request, Response $response, array $args): Response
+    {
+        $userId = (int) $_SESSION['user_id'];
+        $data = (array) $request->getParsedBody();
+        $ok = $this->photos->crop(
+            $userId,
+            (int) ($args['id'] ?? 0),
+            (int) ($data['x'] ?? 0),
+            (int) ($data['y'] ?? 0),
+            (int) ($data['width'] ?? 0),
+            (int) ($data['height'] ?? 0)
+        );
+        Flash::set($ok ? 'success' : 'error', $ok ? 'Photo recadrée.' : 'Recadrage impossible.');
+        $this->refreshSession($userId);
+        return $response->withHeader('Location', '/profile')->withStatus(302);
+    }
+
+    // -------------------------------------------------------------
     // Tags réutilisables
     // -------------------------------------------------------------
 

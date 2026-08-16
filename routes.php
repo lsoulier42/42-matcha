@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Controllers\ApiController;
+use App\Controllers\AppointmentController;
 use App\Controllers\AuthController;
 use App\Controllers\ChatController;
 use App\Controllers\HomeController;
+use App\Controllers\MapController;
 use App\Controllers\NotificationController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
@@ -45,6 +47,9 @@ return static function (App $app): void {
         $app->post('/profile/photo', [ProfileController::class, 'uploadPhoto']);
         $app->post('/profile/photo/{id}/profile', [ProfileController::class, 'setProfilePhoto']);
         $app->post('/profile/photo/{id}/delete', [ProfileController::class, 'deletePhoto']);
+        $app->post('/profile/photo/{id}/rotate', [ProfileController::class, 'rotatePhoto']);
+        $app->post('/profile/photo/{id}/filter', [ProfileController::class, 'filterPhoto']);
+        $app->post('/profile/photo/{id}/crop', [ProfileController::class, 'cropPhoto']);
         $app->post('/profile/tags', [ProfileController::class, 'addTag']);
         $app->post('/profile/tags/{id}/delete', [ProfileController::class, 'removeTag']);
         $app->get('/profile/visits', [ProfileController::class, 'visits']);
@@ -69,6 +74,12 @@ return static function (App $app): void {
 
         // Notifications temps réel (les 5 événements)
         $app->get('/notifications', [NotificationController::class, 'index']);
+
+        // Bonus : carte interactive + rendez-vous entre matchés
+        $app->get('/map', [MapController::class, 'index']);
+        $app->get('/appointments', [AppointmentController::class, 'index']);
+        $app->post('/appointments', [AppointmentController::class, 'create']);
+        $app->post('/appointments/{id}/delete', [AppointmentController::class, 'delete']);
 
         // Polling AJAX : badges globaux + fil de chat ouvert
         $app->get('/api/poll', [ApiController::class, 'poll']);

@@ -181,6 +181,25 @@ CREATE TABLE IF NOT EXISTS notifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- Rendez-vous entre utilisateurs connectés (bonus)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS appointments (
+    id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    user1_id    INT UNSIGNED  NOT NULL,
+    user2_id    INT UNSIGNED  NOT NULL,
+    title       VARCHAR(120)  NOT NULL,
+    description TEXT          NULL,
+    location    VARCHAR(120)  NULL,
+    start_at    DATETIME      NOT NULL,
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_appointments_u1 (user1_id, start_at),
+    KEY idx_appointments_u2 (user2_id, start_at),
+    CONSTRAINT fk_appointments_u1 FOREIGN KEY (user1_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_appointments_u2 FOREIGN KEY (user2_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- Jetons : vérification d'email + réinitialisation de mot de passe
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tokens (

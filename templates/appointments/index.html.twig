@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rendez-vous — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Rendez-vous</h1>
+
+<div class="appointments-grid">
+    <section class="form-card profile-card">
+        <h2>Planifier un rendez-vous</h2>
+        <p class="search-hint">Uniquement avec des utilisateurs connectés (like mutuel).</p>
+
+        {% if matches|length > 0 %}
+            <form method="post" action="/appointments" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-field">
+                    <label for="user_id">Avec qui ?</label>
+                    <select id="user_id" name="user_id" required>
+                        <option value="" disabled selected>Choisir…</option>
+                        {% for match in matches %}
+                            <option value="{{ match.id }}">{{ match.prenom }} ({{ match.ville ?? 'localisation inconnue' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="title">Titre</label>
+                    <input type="text" id="title" name="title" maxlength="120" placeholder="Ex. Café, cinéma, randonnée…" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="start_at">Date et heure</label>
+                    <input type="datetime-local" id="start_at" name="start_at" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="location">Lieu</label>
+                    <input type="text" id="location" name="location" maxlength="120" placeholder="Ex. Place Bellecour, Lyon">
+                </div>
+
+                <div class="form-field">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" maxlength="500"></textarea>
+                </div>
+
+                <button class="btn btn-primary" type="submit">Planifier</button>
+            </form>
+        {% else %}
+            <div class="alert alert-info">
+                Aucun match actif pour l'instant : planifiez des rendez-vous
+                avec vos « connectés ».
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="form-card profile-card">
+        <h2>Mes rendez-vous</h2>
+
+        {% if appointments|length > 0 %}
+            <div class="appointment-list">
+                {% for appointment in appointments %}
+                    <div class="appointment-item {{ appointment.is_past ? 'past' : '' }}">
+                        <div class="appointment-date">
+                            <strong>{{ appointment.start_display }}</strong>
+                        </div>
+                        <div class="appointment-body">
+                            <strong>{{ appointment.title }}</strong>
+                            {% if appointment.location %}<span class="user-meta">📍 {{ appointment.location }}</span>{% endif %}
+                            {% if appointment.description %}<p class="user-bio">{{ appointment.description }}</p>{% endif %}
+                            <span class="user-meta">avec <a href="/user/{{ appointment.other_id }}">{{ appointment.other_prenom }}</a></span>
+                        </div>
+                        <form method="post" action="/appointments/{{ appointment.id }}/delete"
+                              onsubmit="return confirm('Supprimer ce rendez-vous ?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">Aucun rendez-vous planifié pour l'instant.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

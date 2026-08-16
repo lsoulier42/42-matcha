@@ -127,6 +127,192 @@
         setInterval(updateBadges, POLL_INTERVAL);
     }
 
+    /* ---------- Galerie : drag & drop + édition (bonus) ---------- */
+    const dropZone = document.getElementById('drop-zone');
+
+    if (dropZone) {
+        const csrf = document.querySelector('input[name="csrf_token"]').value;
+
+        ['dragover', 'dragenter'].forEach(function (eventName) {
+            dropZone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(function (eventName) {
+            dropZone.addEventListener(eventName, function () {
+                dropZone.classList.remove('dragover');
+            });
+        });
+        dropZone.addEventListener('drop', function (event) {
+            event.preventDefault();
+            const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+            if (!file) {
+                return;
+            }
+            const body = new FormData();
+            body.append('csrf_token', csrf);
+            body.append('photo', file);
+            fetch('/profile/photo', { method: 'POST', body: body })
+                .then(function (res) {
+                    window.location.href = res.url || '/profile';
+                })
+                .catch(function () {
+                    window.location.reload();
+                });
+        });
+    }
+
+    /* --- Éditeur d'image (rotation, filtres, recadrage) --- */
+    const editor = document.getElementById('photo-editor');
+    if (editor) {
+        const editorCanvas = document.getElementById('editor-canvas');
+        const ctx = editorCanvas.getContext('2d');
+        const cropSize = document.getElementById('crop-size');
+        const editorClose = document.getElementById('editor-close');
+        const editorCropBtn = document.getElementById('editor-crop-btn');
+        const rotateForm = document.getElementById('editor-rotate-form');
+        const filterForm = document.getElementById('editor-filter-form');
+        const canvasCss = getComputedStyle(editorCanvas);
+        const cw = parseInt(canvasCss.width, 10) || 320;
+        const ch = parseInt(canvasCss.height, 10) || 320;
+
+        let currentPhotoId = 0;
+        let sourceImage = null;   // Image() de la photo d'origine
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let frame = { x: 0, y: 0, size: 200 };
+        let dragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function draw() {
+            ctx.clearRect(0, 0, cw, ch);
+            if (!sourceImage) {
+                return;
+            }
+            ctx.drawImage(sourceImage, offsetX, offsetY, sourceImage.width * scale, sourceImage.height * scale);
+            // Assombrir l'extérieur du cadre
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.fillRect(0, 0, cw, frame.y);
+            ctx.fillRect(0, frame.y + frame.size, cw, ch - frame.y - frame.size);
+            ctx.fillRect(0, frame.y, frame.x, frame.size);
+            ctx.fillRect(frame.x + frame.size, frame.y, cw - frame.x - frame.size, frame.size);
+            // Bordure du cadre
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(frame.x, frame.y, frame.size, frame.size);
+        }
+
+        function openEditor(photoId) {
+            currentPhotoId = photoId;
+            const img = document.querySelector('[data-photo-id="' + photoId + '"] img');
+            if (!img) {
+                return;
+            }
+            const src = img.getAttribute('src');
+            sourceImage = new Image();
+            sourceImage.crossOrigin = 'anonymous';
+            sourceImage.onload = function () {
+                // Couverture de l'image dans le canvas (cover)
+                scale = Math.max(cw / sourceImage.width, ch / sourceImage.height);
+                offsetX = (cw - sourceImage.width * scale) / 2;
+                offsetY = (ch - sourceImage.height * scale) / 2;
+                const size = Math.round((parseInt(cropSize.value, 10) / 100) * Math.min(cw, ch));
+                frame = { x: Math.round((cw - size) / 2), y: Math.round((ch - size) / 2), size: size };
+                draw();
+            };
+            sourceImage.onerror = function () { /* image illisible : silencieux */ };
+            sourceImage.src = src;
+            editor.hidden = false;
+            // Pointer les formulaires d'édition vers la photo courante
+            rotateForm.setAttribute('action', '/profile/photo/' + photoId + '/rotate');
+            filterForm.setAttribute('action', '/profile/photo/' + photoId + '/filter');
+        }
+
+        function closeEditor() {
+            editor.hidden = true;
+            sourceImage = null;
+        }
+
+        document.querySelectorAll('[data-open-editor]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openEditor(parseInt(button.dataset.openEditor, 10));
+            });
+        });
+
+        if (editorClose) {
+            editorClose.addEventListener('click', closeEditor);
+        }
+
+        if (cropSize) {
+            cropSize.addEventListener('input', function () {
+                if (!sourceImage) {
+                    return;
+                }
+                const size = Math.round((parseInt(cropSize.value, 10) / 100) * Math.min(cw, ch));
+                frame.size = size;
+                frame.x = Math.min(Math.max(frame.x, 0), cw - size);
+                frame.y = Math.min(Math.max(frame.y, 0), ch - size);
+                draw();
+            });
+        }
+
+        if (editorCanvas) {
+            editorCanvas.addEventListener('pointerdown', function (event) {
+                if (!sourceImage) {
+                    return;
+                }
+                const rect = editorCanvas.getBoundingClientRect();
+                const px = event.clientX - rect.left;
+                const py = event.clientY - rect.top;
+                if (px >= frame.x && px <= frame.x + frame.size && py >= frame.y && py <= frame.y + frame.size) {
+                    dragging = true;
+                    dragOffset = { x: px - frame.x, y: py - frame.y };
+                    editorCanvas.setPointerCapture(event.pointerId);
+                }
+            });
+            editorCanvas.addEventListener('pointermove', function (event) {
+                if (!dragging) {
+                    return;
+                }
+                const rect = editorCanvas.getBoundingClientRect();
+                frame.x = Math.min(Math.max(event.clientX - rect.left - dragOffset.x, 0), cw - frame.size);
+                frame.y = Math.min(Math.max(event.clientY - rect.top - dragOffset.y, 0), ch - frame.size);
+                draw();
+            });
+            editorCanvas.addEventListener('pointerup', function () {
+                dragging = false;
+            });
+        }
+
+        if (editorCropBtn) {
+            editorCropBtn.addEventListener('click', function () {
+                if (!sourceImage || currentPhotoId === 0) {
+                    return;
+                }
+                // Conversion des coordonnées canvas → pixels de l'image source
+                const sx = Math.round((frame.x - offsetX) / scale);
+                const sy = Math.round((frame.y - offsetY) / scale);
+                const sw = Math.round(frame.size / scale);
+                const sh = Math.round(frame.size / scale);
+                const body = new FormData();
+                body.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                body.append('x', String(Math.max(0, sx)));
+                body.append('y', String(Math.max(0, sy)));
+                body.append('width', String(Math.max(50, sw)));
+                body.append('height', String(Math.max(50, sh)));
+                fetch('/profile/photo/' + currentPhotoId + '/crop', { method: 'POST', body: body })
+                    .then(function (res) {
+                        window.location.href = res.url || '/profile';
+                    })
+                    .catch(function () {
+                        window.location.reload();
+                    });
+            });
+        }
+    }
+
     /* ---------- Chat temps réel (fil ouvert, polling 5 s) ---------- */
     const chat = document.querySelector('.chat');
 

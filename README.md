@@ -105,6 +105,11 @@ réinitialisation sont visibles dans MailHog.
 | `scripts/migrate.php` | Applique `database/schema.sql` (idempotent) |
 | `scripts/seed.php` | Génère 520 profils Faker + interactions (`--force` pour régénérer) |
 
+> ⚠️ Les fichiers d'images créés par les scripts CLI (seed, tests) appartiennent à
+> root : pour que l'édition GD (bonus galerie) puisse les réécrire, relancer
+> `docker compose exec web chown -R www-data:www-data public/assets/uploads`
+> (fait automatiquement au démarrage du conteneur pour les dossiers existants).
+
 ## Structure
 
 ```
@@ -120,6 +125,20 @@ config/            # settings + définitions du conteneur php-di
 database/schema.sql
 docker/            # Dockerfile php-apache, php.ini, vhost
 ```
+
+## Bonus implémentés
+
+1. **Galerie photo personnelle** : téléchargement par glisser-déposer (zone de
+   dépôt) + édition d'image de base avec GD (rotation 90°/180°/270°, filtres
+   N&B/sépia/négatif/flou, recadrage par cadre déplaçable côté client).
+2. **Carte interactive des utilisateurs** : Leaflet + tuiles OpenStreetMap,
+   marqueurs des profils suggérés positionnés (GPS), popup vers le profil.
+   Nécessite une connexion Internet (fallback affiché sinon).
+3. **Planification de rendez-vous** entre utilisateurs connectés (like mutuel) :
+   liste partagée, création (titre, date, lieu, description), suppression.
+
+Non implémentés (prérequis externes) : OmniAuth (clés OAuth à fournir),
+chat vidéo/audio (WebRTC + serveur de signalisation).
 
 ## Spécifications et tests
 
