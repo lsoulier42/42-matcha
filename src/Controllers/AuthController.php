@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Db\Query;
-use App\Security\PasswordPolicy;
+use App\Repository\TokenRepository;
+use App\Repository\UserRepository;
 use App\Services\MailService;
 use App\Support\Flash;
-use App\Validation\Validator;
+use App\Validation\RegisterValidator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
@@ -16,14 +16,17 @@ use Slim\Views\Twig;
 /**
  * Inscription, vérification d'e-mail, connexion, mot de passe oublié,
  * réinitialisation et déconnexion. Gestionnaire de comptes codé maison
- * (interdit dans le micro-framework).
+ * (interdit dans le micro-framework) — le SQL vit dans les repositories,
+ * les règles de saisie dans RegisterValidator.
  */
 final class AuthController
 {
     public function __construct(
         private Twig $twig,
-        private Query $db,
+        private UserRepository $users,
+        private TokenRepository $tokens,
         private MailService $mail,
+        private RegisterValidator $registerValidator,
         private string $appUrl
     ) {
     }
@@ -47,61 +50,29 @@ final class AuthController
         }
 
         $data = (array) $request->getParsedBody();
-        $email = mb_strtolower(trim((string) ($data['email'] ?? '')));
-        $username = trim((string) ($data['username'] ?? ''));
-        $password = (string) ($data['password'] ?? '');
+        $errors = $this->registerValidator->validate($this->users, $data);
 
-        $v = new Validator();
-        $v->required('email', $email, 'adresse e-mail')
-            ->email('email', $email, 'Adresse e-mail')
-            ->required('username', $username, 'nom d\'utilisateur')
-            ->username('username', $username)
-            ->required('nom', $data['nom'] ?? null, 'nom de famille')
-            ->name('nom', $data['nom'] ?? null, 'Nom de famille')
-            ->required('prenom', $data['prenom'] ?? null, 'prénom')
-            ->name('prenom', $data['prenom'] ?? null, 'Prénom')
-            ->required('password', $password, 'mot de passe')
-            ->equals('password_confirm', $data['password_confirm'] ?? null, $password, 'Les deux mots de passe ne correspondent pas.');
-
-        foreach (PasswordPolicy::check($password) as $error) {
-            $v->add('password', $error);
-        }
-
-        if ($email !== '' && $this->db->value('SELECT id FROM users WHERE email = ?', [$email]) !== null) {
-            $v->add('email', 'Cette adresse e-mail est déjà utilisée.');
-        }
-        if ($username !== '' && $this->db->value('SELECT id FROM users WHERE username = ?', [$username]) !== null) {
-            $v->add('username', 'Ce nom d\'utilisateur est déjà pris.');
-        }
-
-        if ($v->fails()) {
+        if ($errors !== []) {
             return $this->twig->render($response, 'auth/register.html.twig', [
-                'errors' => $v->errors(),
+                'errors' => $errors,
                 'old' => $this->cleanOld($data),
             ]);
         }
 
-        $this->db->beginTransaction();
-        try {
-            $userId = $this->db->insert('users', [
-                'email' => $email,
-                'username' => $username,
-                'nom' => trim((string) ($data['nom'] ?? '')),
-                'prenom' => trim((string) ($data['prenom'] ?? '')),
-                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            ]);
-            $token = $this->createToken($userId, 'verify_email');
-            $this->db->commit();
-        } catch (\Throwable $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
+        $userId = $this->users->create([
+            'email' => mb_strtolower(trim((string) ($data['email'] ?? ''))),
+            'username' => trim((string) ($data['username'] ?? '')),
+            'nom' => trim((string) ($data['nom'] ?? '')),
+            'prenom' => trim((string) ($data['prenom'] ?? '')),
+            'password_hash' => password_hash((string) ($data['password'] ?? ''), PASSWORD_DEFAULT),
+        ]);
+        $token = $this->createToken($userId, 'verify_email');
 
         $link = $this->appUrl . '/auth/verify/' . $token;
-        if (!$this->mail->sendVerification($email, $username, $link)) {
+        if (!$this->mail->sendVerification(mb_strtolower(trim((string) ($data['email'] ?? ''))), trim((string) ($data['username'] ?? '')), $link)) {
             Flash::set('error', 'L\'e-mail de vérification n\'a pas pu être envoyé, réessayez dans un instant.');
         } else {
-            Flash::set('success', 'Compte créé ! Un e-mail de vérification a été envoyé à ' . $email . '.');
+            Flash::set('success', 'Compte créé ! Un e-mail de vérification a été envoyé à ' . mb_strtolower(trim((string) ($data['email'] ?? ''))) . '.');
         }
         return $response->withHeader('Location', '/auth/login')->withStatus(302);
     }
@@ -119,17 +90,7 @@ final class AuthController
             ['ok' => $ok, 'message' => $message]
         );
 
-        if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
-            return $render(false, 'Ce lien de vérification est invalide.');
-        }
-
-        $row = $this->db->fetch(
-            'SELECT t.id AS token_id, t.used, t.expires_at, u.id AS user_id
-             FROM tokens t JOIN users u ON u.id = t.user_id
-             WHERE t.token = ? AND t.type = ?',
-            [$token, 'verify_email']
-        );
-
+        $row = $this->tokens->findValidVerify($token);
         if ($row === null) {
             return $render(false, 'Ce lien de vérification est invalide ou déjà utilisé.');
         }
@@ -141,8 +102,8 @@ final class AuthController
         }
 
         // Usage unique : jeton marqué utilisé + compte activé.
-        $this->db->update('tokens', ['used' => 1], 'id = ?', [$row['token_id']]);
-        $this->db->update('users', ['email_verifie' => 1], 'id = ?', [$row['user_id']]);
+        $this->tokens->markUsed((int) $row['token_id']);
+        $this->users->setEmailVerified((int) $row['user_id']);
 
         Flash::set('success', 'Votre compte est vérifié, vous pouvez vous connecter.');
         return $response->withHeader('Location', '/auth/login')->withStatus(302);
@@ -170,10 +131,7 @@ final class AuthController
         $username = trim((string) ($data['username'] ?? ''));
         $password = (string) ($data['password'] ?? '');
 
-        $user = $this->db->fetch(
-            'SELECT * FROM users WHERE username = ? AND actif = 1',
-            [$username]
-        );
+        $user = $this->users->findByUsername($username);
 
         $error = null;
         if ($user === null || !password_verify($password, (string) $user['password_hash'])) {
@@ -196,7 +154,7 @@ final class AuthController
         $_SESSION['user_id'] = (int) $user['id'];
         unset($user['password_hash']);
         $_SESSION['user'] = $user;
-        $this->db->run('UPDATE users SET derniere_connexion = NOW() WHERE id = ?', [$user['id']]);
+        $this->users->touchLastLogin((int) $user['id']);
 
         Flash::set('success', 'Bonjour ' . $user['prenom'] . ' !');
         return $this->redirectToSuggestions($response);
@@ -246,7 +204,7 @@ final class AuthController
         Flash::set('success', 'Si un compte existe avec cette adresse e-mail, un lien de réinitialisation vient d\'être envoyé.');
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
-            $user = $this->db->fetch('SELECT * FROM users WHERE email = ? AND actif = 1', [$email]);
+            $user = $this->users->findByEmail($email);
             if ($user !== null) {
                 $token = $this->createToken((int) $user['id'], 'reset_password');
                 $link = $this->appUrl . '/auth/reset/' . $token;
@@ -265,7 +223,7 @@ final class AuthController
         $token = (string) ($args['token'] ?? '');
         return $this->twig->render($response, 'auth/reset.html.twig', [
             'token' => $token,
-            'token_valid' => $this->resetTokenValid($token) !== null,
+            'token_valid' => $this->tokens->findValidReset($token) !== null,
         ]);
     }
 
@@ -276,7 +234,7 @@ final class AuthController
         }
 
         $token = (string) ($args['token'] ?? '');
-        $row = $this->resetTokenValid($token);
+        $row = $this->tokens->findValidReset($token);
 
         if ($row === null) {
             return $this->twig->render($response, 'auth/reset.html.twig', [
@@ -288,10 +246,10 @@ final class AuthController
 
         $data = (array) $request->getParsedBody();
         $password = (string) ($data['password'] ?? '');
-        $v = new Validator();
+        $v = new \App\Validation\Validator();
         $v->required('password', $password, 'nouveau mot de passe')
             ->equals('password_confirm', $data['password_confirm'] ?? null, $password, 'Les deux mots de passe ne correspondent pas.');
-        foreach (PasswordPolicy::check($password) as $error) {
+        foreach (\App\Security\PasswordPolicy::check($password) as $error) {
             $v->add('password', $error);
         }
 
@@ -303,20 +261,10 @@ final class AuthController
             ]);
         }
 
-        $this->db->beginTransaction();
-        try {
-            $this->db->update('tokens', ['used' => 1], 'id = ?', [$row['id']]);
-            $this->db->update(
-                'users',
-                ['password_hash' => password_hash($password, PASSWORD_DEFAULT)],
-                'id = ?',
-                [$row['user_id']]
-            );
-            $this->db->commit();
-        } catch (\Throwable $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
+        $this->tokens->markUsed((int) $row['id']);
+        $this->users->update((int) $row['user_id'], [
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+        ]);
 
         Flash::set('success', 'Mot de passe réinitialisé, vous pouvez vous connecter.');
         return $response->withHeader('Location', '/auth/login')->withStatus(302);
@@ -339,29 +287,8 @@ final class AuthController
     private function createToken(int $userId, string $type): string
     {
         $token = bin2hex(random_bytes(32));
-        $this->db->insert('tokens', [
-            'user_id' => $userId,
-            'type' => $type,
-            'token' => $token,
-            'expires_at' => date('Y-m-d H:i:s', time() + 24 * 3600),
-        ]);
+        $this->tokens->create($userId, $type, $token, date('Y-m-d H:i:s', time() + 24 * 3600));
         return $token;
-    }
-
-    /** Retourne la ligne du jeton si valide (non utilisé, non expiré), sinon null. */
-    private function resetTokenValid(string $token): ?array
-    {
-        if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
-            return null;
-        }
-        $row = $this->db->fetch(
-            'SELECT id, user_id, used, expires_at FROM tokens WHERE token = ? AND type = ?',
-            [$token, 'reset_password']
-        );
-        if ($row === null || (int) $row['used'] === 1 || strtotime((string) $row['expires_at']) < time()) {
-            return null;
-        }
-        return $row;
     }
 
     /** Ne jamais réafficher le mot de passe dans le formulaire. */

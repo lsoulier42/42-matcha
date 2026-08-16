@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Db\Query;
+use App\Repository\PhotoRepository;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -12,11 +12,12 @@ use Psr\Http\Message\UploadedFileInterface;
  * Validation côté serveur : magic bytes via getimagesize(), taille max,
  * renommage systématique (aucun nom fourni par l'utilisateur), dossier
  * protégé contre l'exécution de scripts (public/assets/uploads/.htaccess).
+ * Bonus galerie : édition d'image de base avec GD (rotation, filtres, recadrage).
  */
 final class PhotoService
 {
     public function __construct(
-        private Query $db,
+        private PhotoRepository $photos,
         private array $settings
     ) {
     }
@@ -35,8 +36,7 @@ final class PhotoService
             return ['Aucun fichier reçu ou upload interrompu.'];
         }
 
-        $count = (int) $this->db->value('SELECT COUNT(*) FROM photos WHERE user_id = ?', [$userId]);
-        if ($count >= $cfg['max_photos']) {
+        if ($this->photos->countForUser($userId) >= $cfg['max_photos']) {
             return ['Nombre maximal de photos atteint (' . $cfg['max_photos'] . ').'];
         }
 
@@ -67,13 +67,8 @@ final class PhotoService
         }
 
         // Première photo = photo de profil par défaut.
-        $position = $this->db->value('SELECT COALESCE(MAX(position), -1) + 1 FROM photos WHERE user_id = ?', [$userId]);
-        $this->db->insert('photos', [
-            'user_id' => $userId,
-            'path' => '/assets/uploads/' . $filename,
-            'is_profile' => $count === 0 ? 1 : 0,
-            'position' => (int) $position,
-        ]);
+        $isProfile = $this->photos->countForUser($userId) === 0 ? 1 : 0;
+        $this->photos->create($userId, '/assets/uploads/' . $filename, $isProfile, $this->photos->nextPosition($userId));
 
         return [];
     }
@@ -81,18 +76,16 @@ final class PhotoService
     /** Désigne la photo de profil (une seule à la fois). */
     public function setProfile(int $userId, int $photoId): void
     {
-        $owner = $this->db->value('SELECT user_id FROM photos WHERE id = ?', [$photoId]);
-        if ((int) $owner !== $userId) {
+        if ($this->photos->findOwned($photoId, $userId) === null) {
             return; // pas la propriété de l'utilisateur : on ignore
         }
-        $this->db->run('UPDATE photos SET is_profile = 0 WHERE user_id = ?', [$userId]);
-        $this->db->update('photos', ['is_profile' => 1], 'id = ?', [$photoId]);
+        $this->photos->setProfile($userId, $photoId);
     }
 
     /** Supprime une photo (et son fichier). */
     public function delete(int $userId, int $photoId): void
     {
-        $photo = $this->db->fetch('SELECT * FROM photos WHERE id = ? AND user_id = ?', [$photoId, $userId]);
+        $photo = $this->photos->findOwned($photoId, $userId);
         if ($photo === null) {
             return;
         }
@@ -103,16 +96,13 @@ final class PhotoService
         }
 
         $wasProfile = (int) $photo['is_profile'] === 1;
-        $this->db->delete('photos', 'id = ?', [$photoId]);
+        $this->photos->delete($photoId);
 
         if ($wasProfile) {
             // La photo suivante devient photo de profil, si elle existe.
-            $next = $this->db->fetch(
-                'SELECT id FROM photos WHERE user_id = ? ORDER BY position ASC LIMIT 1',
-                [$userId]
-            );
+            $next = $this->photos->next($userId);
             if ($next !== null) {
-                $this->db->update('photos', ['is_profile' => 1], 'id = ?', [$next['id']]);
+                $this->photos->setProfile($userId, (int) $next['id']);
             }
         }
     }
@@ -120,10 +110,13 @@ final class PhotoService
     /** Photo de profil d'un utilisateur (ou null). */
     public function profilePhoto(int $userId): ?array
     {
-        return $this->db->fetch(
-            'SELECT * FROM photos WHERE user_id = ? AND is_profile = 1 ORDER BY position ASC LIMIT 1',
-            [$userId]
-        );
+        return $this->photos->profilePhoto($userId);
+    }
+
+    /** Liste des photos d'un utilisateur (ordre de position). */
+    public function listByUser(int $userId): array
+    {
+        return $this->photos->listByUser($userId);
     }
 
     // ------------------------------------------------------------
@@ -215,7 +208,7 @@ final class PhotoService
     /** Charge une photo appartenant à l'utilisateur, prête pour GD. */
     private function loadOwned(int $userId, int $photoId): ?array
     {
-        $photo = $this->db->fetch('SELECT * FROM photos WHERE id = ? AND user_id = ?', [$photoId, $userId]);
+        $photo = $this->photos->findOwned($photoId, $userId);
         if ($photo === null) {
             return null;
         }

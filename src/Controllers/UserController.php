@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Db\Query;
+use App\Repository\BlockRepository;
+use App\Repository\LikeRepository;
+use App\Repository\PhotoRepository;
+use App\Repository\ReportRepository;
+use App\Repository\TagRepository;
+use App\Repository\UserRepository;
+use App\Repository\VisitRepository;
 use App\Services\NotificationService;
-use App\Services\PhotoService;
 use App\Services\PopularityService;
 use App\Support\Flash;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -17,14 +22,19 @@ use Slim\Views\Twig;
  * Consultation de profil public (section 3.5) : toutes les infos sauf
  * e-mail et mot de passe, historique de visites, like/unlike (refusé
  * côté serveur sans photo de profil), like mutuel = « connectés »,
- * blocage, signalement, statut en ligne.
+ * blocage, signalement, statut en ligne. Le SQL vit dans les repositories.
  */
 final class UserController
 {
     public function __construct(
         private Twig $twig,
-        private Query $db,
-        private PhotoService $photos,
+        private UserRepository $users,
+        private PhotoRepository $photos,
+        private TagRepository $tags,
+        private LikeRepository $likes,
+        private VisitRepository $visits,
+        private BlockRepository $blocks,
+        private ReportRepository $reports,
         private PopularityService $popularity,
         private NotificationService $notifications
     ) {
@@ -39,7 +49,7 @@ final class UserController
             return $response->withHeader('Location', '/profile')->withStatus(302);
         }
 
-        $user = $this->db->fetch('SELECT * FROM users WHERE id = ? AND actif = 1', [$id]);
+        $user = $this->users->findActiveById($id);
         if ($user === null) {
             return $this->twig->render($response->withStatus(404), 'user/unavailable.html.twig', [
                 'reason' => 'Ce profil n\'existe pas ou n\'est plus actif.',
@@ -47,34 +57,18 @@ final class UserController
         }
 
         // Blocage dans un sens ou dans l'autre → profil indisponible.
-        if ($this->isBlocked($me, $id)) {
+        if ($this->blocks->isBlocked($me, $id)) {
             return $this->twig->render($response->withStatus(403), 'user/unavailable.html.twig', [
                 'reason' => 'Ce profil n\'est pas disponible.',
             ]);
         }
 
         // La consultation est enregistrée (historique de visites du visiteur).
-        $this->db->run(
-            'INSERT INTO visits (visitor_id, visited_id, viewed_at)
-             VALUES (?, ?, NOW())
-             ON DUPLICATE KEY UPDATE viewed_at = NOW()',
-            [$me, $id]
-        );
+        $this->visits->record($me, $id);
         $this->notifications->notify($id, 'visit', $me);
 
-        $photos = $this->db->fetchAll(
-            'SELECT * FROM photos WHERE user_id = ? ORDER BY position ASC',
-            [$id]
-        );
-        $tags = $this->db->fetchAll(
-            'SELECT t.id, t.name FROM tags t
-             JOIN user_tags ut ON ut.tag_id = t.id
-             WHERE ut.user_id = ? ORDER BY t.name ASC',
-            [$id]
-        );
-
-        $iLiked = $this->db->value('SELECT id FROM likes WHERE from_user_id = ? AND to_user_id = ?', [$me, $id]) !== null;
-        $likedMe = $this->db->value('SELECT id FROM likes WHERE from_user_id = ? AND to_user_id = ?', [$id, $me]) !== null;
+        $iLiked = $this->likes->exists($me, $id);
+        $likedMe = $this->likes->exists($id, $me);
 
         $user['age'] = $this->ageOf((string) ($user['birthdate'] ?? ''));
         $user['popularity_display'] = number_format((float) $user['note_popularite'], 1, ',', ' ');
@@ -83,8 +77,8 @@ final class UserController
 
         return $this->twig->render($response, 'user/show.html.twig', [
             'user' => $user,
-            'photos' => $photos,
-            'tags' => $tags,
+            'photos' => $this->photos->listByUser($id),
+            'tags' => $this->tags->listByUser($id),
             'i_liked' => $iLiked,
             'liked_me' => $likedMe,
             'is_match' => $iLiked && $likedMe,
@@ -104,30 +98,23 @@ final class UserController
         if ($id === $me) {
             return $this->redirect($response, $back);
         }
-        if ($this->isBlocked($me, $id)) {
+        if ($this->blocks->isBlocked($me, $id)) {
             Flash::set('error', 'Action impossible sur ce profil.');
             return $this->redirect($response, $back);
         }
 
         // Exigence du sujet : sans photo de profil, le like est refusé
         // CÔTÉ SERVEUR (pas seulement masqué dans l'interface).
-        $hasProfilePhoto = $this->db->value(
-            'SELECT id FROM photos WHERE user_id = ? AND is_profile = 1 LIMIT 1',
-            [$me]
-        ) !== null;
-        if (!$hasProfilePhoto) {
+        if (!$this->photos->hasProfilePhoto($me)) {
             Flash::set('error', 'Vous devez avoir une photo de profil pour liker un autre profil.');
             return $this->redirect($response, $back);
         }
 
-        $already = $this->db->value('SELECT id FROM likes WHERE from_user_id = ? AND to_user_id = ?', [$me, $id]) !== null;
-
-        if (!$already) {
-            $this->db->insert('likes', ['from_user_id' => $me, 'to_user_id' => $id]);
+        if (!$this->likes->exists($me, $id)) {
+            $this->likes->add($me, $id);
             $this->popularity->recompute($id);
 
-            $likedMe = $this->db->value('SELECT id FROM likes WHERE from_user_id = ? AND to_user_id = ?', [$id, $me]) !== null;
-            if ($likedMe) {
+            if ($this->likes->exists($id, $me)) {
                 // Like mutuel : « connectés », le chat est débloqué.
                 $this->notifications->notify($id, 'match', $me);
                 $this->notifications->notify($me, 'match', $id);
@@ -151,13 +138,9 @@ final class UserController
         $back = $this->backUrl($request, $id);
 
         if ($id !== $me) {
-            $this->db->delete('likes', 'from_user_id = ? AND to_user_id = ?', [$me, $id]);
+            $this->likes->remove($me, $id);
             // Un unlike est tracé (formule de popularité).
-            $this->db->run(
-                'INSERT INTO unlikes (from_user_id, to_user_id) VALUES (?, ?)
-                 ON DUPLICATE KEY UPDATE created_at = NOW()',
-                [$me, $id]
-            );
+            $this->likes->recordUnlike($me, $id);
             // Plus de nouvelles notifications de cet utilisateur + chat coupé (plus de match).
             $this->notifications->clearUnreadFrom($me, $id);
             $this->notifications->notify($id, 'unlike', $me);
@@ -180,10 +163,7 @@ final class UserController
         $back = $this->backUrl($request, $id);
 
         if ($id !== $me) {
-            $this->db->run(
-                'INSERT IGNORE INTO blocks (blocker_id, blocked_id) VALUES (?, ?)',
-                [$me, $id]
-            );
+            $this->blocks->add($me, $id);
             // Plus de notifications de l'utilisateur bloqué.
             $this->notifications->clearUnreadFrom($me, $id);
             Flash::set('success', 'Utilisateur bloqué. Il n\'apparaît plus dans vos recherches.');
@@ -199,7 +179,7 @@ final class UserController
         $back = $this->backUrl($request, $id);
 
         if ($id !== $me) {
-            $this->db->delete('blocks', 'blocker_id = ? AND blocked_id = ?', [$me, $id]);
+            $this->blocks->remove($me, $id);
             Flash::set('success', 'Utilisateur débloqué.');
         }
 
@@ -217,10 +197,7 @@ final class UserController
             if ($reason === '' || mb_strlen($reason) > 255) {
                 Flash::set('error', 'Veuillez préciser un motif (255 caractères max).');
             } else {
-                $this->db->run(
-                    'INSERT IGNORE INTO reports (reporter_id, reported_id, reason) VALUES (?, ?, ?)',
-                    [$me, $id, $reason]
-                );
+                $this->reports->add($me, $id, $reason);
                 Flash::set('success', 'Signalement envoyé. Merci pour votre vigilance.');
             }
         }
@@ -231,14 +208,6 @@ final class UserController
     // -------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------
-
-    private function isBlocked(int $me, int $other): bool
-    {
-        return $this->db->value(
-            'SELECT id FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)',
-            [$me, $other, $other, $me]
-        ) !== null;
-    }
 
     private function isOnline(string $lastSeen): bool
     {

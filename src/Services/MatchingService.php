@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Db\Query;
+use App\Repository\BlockRepository;
+use App\Repository\TagRepository;
+use App\Repository\UserRepository;
 
 /**
  * Algorithme de suggestions « intelligentes » (section 3.3 du sujet).
@@ -22,57 +24,36 @@ use App\Db\Query;
  *   3. Note de popularité : + note (0–10).
  *
  * Exclusions : soi-même, comptes inactifs/non vérifiés, bloqués des deux côtés.
+ *
+ * Le SQL est centralisé dans UserRepository::suggestCandidates ; ce service
+ * construit les critères, applique la compatibilité d'orientation, le score
+ * et le tri.
  */
 final class MatchingService
 {
     public function __construct(
-        private Query $db,
+        private UserRepository $users,
+        private TagRepository $tags,
+        private BlockRepository $blocks,
         private array $settings
     ) {
     }
 
     /**
-     * @param array{filters:array, sort:string} $filters
-     * @return array<array>
+     * @param array $filters age_min, age_max, popularity_min, ville, tags[]
      */
     public function suggest(int $userId, array $filters = [], string $sort = 'score'): array
     {
-        $me = $this->db->fetch('SELECT * FROM users WHERE id = ?', [$userId]);
+        $me = $this->users->findById($userId);
         if ($me === null) {
             return [];
         }
 
-        $blocked = $this->db->fetchAll(
-            'SELECT blocked_id AS id FROM blocks WHERE blocker_id = ?
-             UNION SELECT blocker_id AS id FROM blocks WHERE blocked_id = ?',
-            [$userId, $userId]
-        );
-        $blockedIds = array_map('intval', array_column($blocked, 'id'));
-
-        $myTags = $this->db->fetchAll(
-            'SELECT t.id, t.name FROM tags t JOIN user_tags ut ON ut.tag_id = t.id WHERE ut.user_id = ?',
-            [$userId]
-        );
-        $myTagIds = array_map('intval', array_column($myTags, 'id'));
+        $blockedIds = $this->blocks->idsInvolving($userId);
+        $myTagIds = $this->tags->idsForUser($userId);
 
         [$where, $params] = $this->buildWhere($me, $filters, $blockedIds);
-
-        $sharedSelect = $myTagIds !== []
-            ? '(SELECT COUNT(*) FROM user_tags ut2 WHERE ut2.user_id = u.id AND ut2.tag_id IN ('
-                . implode(',', array_fill(0, count($myTagIds), '?')) . '))'
-            : '0';
-
-        $rows = $this->db->fetchAll(
-            "SELECT u.id, u.username, u.prenom, u.genre, u.orientation, u.bio, u.birthdate,
-                    u.note_popularite, u.ville, u.lat, u.lng, u.derniere_connexion,
-                    p.path AS avatar, $sharedSelect AS shared_tags
-             FROM users u
-             LEFT JOIN photos p ON p.user_id = u.id AND p.is_profile = 1
-             WHERE $where
-             ORDER BY u.note_popularite DESC",
-            [...$myTagIds, ...$params]
-        );
-
+        $rows = $this->users->suggestCandidates($where, $params, $myTagIds);
         $candidates = [];
         foreach ($rows as $row) {
             if (!$this->orientationCompatible($me, $row)) {
@@ -167,7 +148,7 @@ final class MatchingService
             $params = [...$params, ...$tagNames];
         }
 
-        return [implode(' AND ', $where), $params];
+        return [$where, $params]; // fusionné par le repository (AND)
     }
 
     /** Distance Haversine en km (null si coordonnées manquantes). */

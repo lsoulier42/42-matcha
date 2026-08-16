@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Db\Query;
+use App\Repository\TagRepository;
 use App\Services\MatchingService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,7 +21,7 @@ final class SearchController
 
     public function __construct(
         private Twig $twig,
-        private Query $db,
+        private TagRepository $tags,
         private MatchingService $matching
     ) {
     }
@@ -52,14 +52,12 @@ final class SearchController
             }
         }
 
-        $profiles = $searched ? $this->matching->suggest($userId, $filters, $sort) : [];
-
         return $this->twig->render($response, 'search/index.html.twig', [
-            'profiles' => $profiles,
+            'profiles' => $searched ? $this->matching->suggest($userId, $filters, $sort) : [],
             'sort' => $sort,
             'filters' => $filters,
             'searched' => $searched,
-            'all_tags' => $this->db->fetchAll('SELECT name FROM tags ORDER BY name ASC'),
+            'all_tags' => $this->tags->all(),
         ]);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Db\Query;
+use App\Repository\TagRepository;
 use App\Services\MatchingService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -20,7 +20,7 @@ final class SuggestController
 
     public function __construct(
         private Twig $twig,
-        private Query $db,
+        private TagRepository $tags,
         private MatchingService $matching
     ) {
     }
@@ -36,13 +36,12 @@ final class SuggestController
         }
 
         $filters = $this->filters($params);
-        $profiles = $this->matching->suggest($userId, $filters, $sort);
 
         return $this->twig->render($response, 'suggestions/index.html.twig', [
-            'profiles' => $profiles,
+            'profiles' => $this->matching->suggest($userId, $filters, $sort),
             'sort' => $sort,
             'filters' => $filters,
-            'all_tags' => $this->db->fetchAll('SELECT name FROM tags ORDER BY name ASC'),
+            'all_tags' => $this->tags->all(),
             'me' => $_SESSION['user'],
         ]);
     }
