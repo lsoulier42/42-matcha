@@ -19,9 +19,9 @@
                 <div class="user-info">
                     <strong>{{ liker.prenom }} ({{ liker.age ?? '?' }})</strong>
                     <span class="user-meta">{{ liker.ville ?? 'Localisation inconnue' }}</span>
-                    <span class="user-meta">⭐ {{ liker.popularity_display }}/10</span>
+                    <span class="user-meta">⭐ {{ liker.popularityDisplay }}/10</span>
                 </div>
-                <time class="user-date">{{ liker.created_at|date('d/m/Y H:i') }}</time>
+                <time class="user-date">{{ liker.date|date('d/m/Y H:i') }}</time>
             </a>
         {% endfor %}
     </div>

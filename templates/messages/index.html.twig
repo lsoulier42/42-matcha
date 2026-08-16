@@ -19,11 +19,11 @@
                 <div class="conversation-body">
                     <div class="conversation-top">
                         <strong>{{ conv.prenom }}</strong>
-                        <time>{{ conv.last_message_at_display }}</time>
+                        <time>{{ conv.lastMessageAtLabel }}</time>
                     </div>
                     <div class="conversation-preview {{ conv.unread > 0 ? 'unread' : '' }}">
                         {% if conv.unread > 0 %}<span class="badge">{{ conv.unread }}</span>{% endif %}
-                        {{ conv.last_message ? conv.last_message : 'Dites bonjour 👋' }}
+                        {{ conv.lastMessage ? conv.lastMessage : 'Dites bonjour 👋' }}
                     </div>
                 </div>
             </a>

@@ -31,7 +31,7 @@
             <label for="tags">Tags (au moins un)</label>
             <select id="tags" name="tags[]" multiple size="4">
                 {% for tag in all_tags %}
-                    <option value="{{ tag.name }}" {{ tag.name in filters.tags ? 'selected' : '' }}>#{{ tag.name }}</option>
+                    <option value="{{ tag }}" {{ tag in filters.tags ? 'selected' : '' }}>#{{ tag }}</option>
                 {% endfor %}
             </select>
         </div>

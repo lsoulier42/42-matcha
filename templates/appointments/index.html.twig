@@ -60,15 +60,15 @@
         {% if appointments|length > 0 %}
             <div class="appointment-list">
                 {% for appointment in appointments %}
-                    <div class="appointment-item {{ appointment.is_past ? 'past' : '' }}">
+                    <div class="appointment-item {{ appointment.isPast ? 'past' : '' }}">
                         <div class="appointment-date">
-                            <strong>{{ appointment.start_display }}</strong>
+                            <strong>{{ appointment.startLabel }}</strong>
                         </div>
                         <div class="appointment-body">
                             <strong>{{ appointment.title }}</strong>
                             {% if appointment.location %}<span class="user-meta">📍 {{ appointment.location }}</span>{% endif %}
                             {% if appointment.description %}<p class="user-bio">{{ appointment.description }}</p>{% endif %}
-                            <span class="user-meta">avec <a href="/user/{{ appointment.other_id }}">{{ appointment.other_prenom }}</a></span>
+                            <span class="user-meta">avec <a href="/user/{{ appointment.otherId }}">{{ appointment.otherPrenom }}</a></span>
                         </div>
                         <form method="post" action="/appointments/{{ appointment.id }}/delete"
                               onsubmit="return confirm('Supprimer ce rendez-vous ?');">

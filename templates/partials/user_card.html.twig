@@ -10,11 +10,11 @@
         <strong>{{ user.prenom }} ({{ user.age ?? '?' }})</strong>
         <span class="user-meta">
             {{ user.ville ?? 'Localisation inconnue' }}
-            {% if user.distance_km is not null %} — à {{ user.distance_km|replace({'.': ','}) }} km{% endif %}
+            {% if user.distanceKm is not null %} — à {{ user.distanceKm|replace({'.': ','}) }} km{% endif %}
         </span>
-        <span class="user-meta">⭐ Popularité {{ user.popularity_display }}/10</span>
-        {% if user.shared_tags > 0 %}
-            <span class="user-meta tags-common"># {{ user.shared_tags }} tag(s) en commun</span>
+        <span class="user-meta">⭐ Popularité {{ user.popularityDisplay }}/10</span>
+        {% if user.sharedTags > 0 %}
+            <span class="user-meta tags-common"># {{ user.sharedTags }} tag(s) en commun</span>
         {% endif %}
         {% if user.bio %}
             <span class="user-bio">{{ user.bio|slice(0, 90) }}{% if user.bio|length > 90 %}…{% endif %}</span>

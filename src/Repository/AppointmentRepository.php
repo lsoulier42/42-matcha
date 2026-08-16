@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\Entity\Appointment;
 
 /**
  * Rendez-vous entre utilisateurs connectés (bonus).
@@ -18,7 +19,7 @@ final class AppointmentRepository
     /** Rendez-vous impliquant $userId, avec l'autre participant. */
     public function listFor(int $userId): array
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             'SELECT a.id, a.title, a.description, a.location, a.start_at, a.user1_id, a.user2_id,
                     CASE WHEN a.user1_id = ? THEN u2.id ELSE u1.id END AS other_id,
                     CASE WHEN a.user1_id = ? THEN u2.prenom ELSE u1.prenom END AS other_prenom,
@@ -30,6 +31,7 @@ final class AppointmentRepository
              ORDER BY a.start_at ASC',
             [$userId, $userId, $userId, $userId, $userId]
         );
+        return array_map(static fn (array $row): Appointment => Appointment::fromRow($row), $rows);
     }
 
     public function create(array $data): int

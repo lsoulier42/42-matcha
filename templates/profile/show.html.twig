@@ -67,7 +67,7 @@
         <h2>Localisation</h2>
 
         <p class="localisation-info">
-            {% if user.gps_consent %}
+            {% if user.gpsConsent %}
                 📍 Position GPS active{% if user.ville %} — {{ user.ville }}{% endif %}
             {% elseif user.ville %}
                 📍 {{ user.ville }} (saisie manuelle)
@@ -103,11 +103,11 @@
 
         <div class="photo-grid" id="photo-grid">
             {% for photo in photos %}
-                <div class="photo-item {{ photo.is_profile ? 'is-profile' : '' }}" data-photo-id="{{ photo.id }}">
+                <div class="photo-item {{ photo.isProfile ? 'is-profile' : '' }}" data-photo-id="{{ photo.id }}">
                     <img src="{{ app_url }}{{ photo.path }}?v={{ photo.id }}" alt="Photo {{ loop.index }}" loading="lazy">
-                    {% if photo.is_profile %}<span class="photo-tag">Photo de profil</span>{% endif %}
+                    {% if photo.isProfile %}<span class="photo-tag">Photo de profil</span>{% endif %}
                     <div class="photo-actions">
-                        {% if not photo.is_profile %}
+                        {% if not photo.isProfile %}
                             <form method="post" action="/profile/photo/{{ photo.id }}/profile">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button class="btn btn-ghost btn-sm" type="submit">Définir comme photo de profil</button>

@@ -40,6 +40,6 @@ final class PopularityService
     public function score(int $userId): float
     {
         $user = $this->users->findById($userId);
-        return $user === null ? 0.0 : (float) $user['note_popularite'];
+        return $user === null ? 0.0 : $user->notePopularite;
     }
 }

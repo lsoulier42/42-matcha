@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\Entity\Photo;
 
 /**
  * Photos des profils (maximum 5, une photo de profil).
@@ -15,12 +16,14 @@ final class PhotoRepository
     {
     }
 
+    /** @return Photo[] */
     public function listByUser(int $userId): array
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             'SELECT * FROM photos WHERE user_id = ? ORDER BY position ASC',
             [$userId]
         );
+        return array_map(static fn (array $row): Photo => Photo::fromRow($row), $rows);
     }
 
     public function countForUser(int $userId): int
@@ -28,9 +31,10 @@ final class PhotoRepository
         return (int) $this->db->value('SELECT COUNT(*) FROM photos WHERE user_id = ?', [$userId]);
     }
 
-    public function findOwned(int $photoId, int $userId): ?array
+    public function findOwned(int $photoId, int $userId): ?Photo
     {
-        return $this->db->fetch('SELECT * FROM photos WHERE id = ? AND user_id = ?', [$photoId, $userId]);
+        $row = $this->db->fetch('SELECT * FROM photos WHERE id = ? AND user_id = ?', [$photoId, $userId]);
+        return $row === null ? null : Photo::fromRow($row);
     }
 
     public function create(int $userId, string $path, int $isProfile, int $position): int
@@ -64,20 +68,22 @@ final class PhotoRepository
     }
 
     /** Première photo restante (pour promouvoir après suppression). */
-    public function next(int $userId): ?array
+    public function next(int $userId): ?Photo
     {
-        return $this->db->fetch(
-            'SELECT id FROM photos WHERE user_id = ? ORDER BY position ASC LIMIT 1',
+        $row = $this->db->fetch(
+            'SELECT * FROM photos WHERE user_id = ? ORDER BY position ASC LIMIT 1',
             [$userId]
         );
+        return $row === null ? null : Photo::fromRow($row);
     }
 
-    public function profilePhoto(int $userId): ?array
+    public function profilePhoto(int $userId): ?Photo
     {
-        return $this->db->fetch(
+        $row = $this->db->fetch(
             'SELECT * FROM photos WHERE user_id = ? AND is_profile = 1 ORDER BY position ASC LIMIT 1',
             [$userId]
         );
+        return $row === null ? null : Photo::fromRow($row);
     }
 
     /** L'utilisateur a-t-il une photo de profil ? (exigence pour liker) */

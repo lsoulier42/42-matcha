@@ -30,15 +30,8 @@ final class AppointmentController
     {
         $userId = (int) $_SESSION['user_id'];
 
-        $appointments = $this->appointments->listFor($userId);
-        foreach ($appointments as &$appointment) {
-            $appointment['start_display'] = date('d/m/Y à H:i', strtotime((string) $appointment['start_at']));
-            $appointment['is_past'] = strtotime((string) $appointment['start_at']) < time();
-        }
-        unset($appointment);
-
         return $this->twig->render($response, 'appointments/index.html.twig', [
-            'appointments' => $appointments,
+            'appointments' => $this->appointments->listFor($userId),
             'matches' => $this->messages->conversations($userId),
         ]);
     }

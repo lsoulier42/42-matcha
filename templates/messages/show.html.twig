@@ -25,9 +25,9 @@
 
     <div class="chat-thread" id="chat-thread">
         {% for message in history %}
-            <div class="chat-message {{ message.from_user_id == current_user.id ? 'mine' : 'theirs' }}">
+            <div class="chat-message {{ message.fromUserId == current_user.id ? 'mine' : 'theirs' }}">
                 <div class="chat-bubble">{{ message.content }}</div>
-                <time class="chat-time">{{ message.sent_at|date('H:i') }}</time>
+                <time class="chat-time">{{ message.sentAt|date('H:i') }}</time>
             </div>
         {% endfor %}
     </div>

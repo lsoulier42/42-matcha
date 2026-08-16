@@ -1,53 +1,60 @@
-# Refactoring : couche Repository + classes de Validation
+# Refactoring : DTO complets (entités + vues) à la place des tableaux associatifs
 
 ## Objectif
-Sortir le SQL direct et les règles métier des contrôleurs vers une couche **Repository** (sans ORM — la mini-lib `Query` reste la seule couche d'accès, conforme au sujet) et des classes **Validation** par domaine. Refactoring **purement mécanique : aucun changement de comportement**, suivi d'un rejeu complet des tests pour zéro régression.
+Remplacer les tableaux associatifs par des classes typées : **entités** (rows SQL) et **ViewModels** (données affichées). Zéro changement de comportement, rejeu complet des tests après migration.
 
-## 1. Couche Repository — `src/Repository/` (11 classes, `Query` injecté, autowirées par php-di)
+## 1. Entités — `src/Entity/` (classes `readonly`, propriétés publiques typées, named constructor `fromRow()`)
 
-| Repository | Méthodes principales (migration des requêtes actuelles) |
+| Classe | Propriétés |
 |---|---|
-| `UserRepository` | findById, findByUsername, findByEmail, emailExists (avec exclusion), usernameExists, create, update, touchLastLogin, setEmailVerified, findWithPosition (carte), count |
-| `TokenRepository` | create, findValidVerify (JOIN users), findValidReset, markUsed |
-| `TagRepository` | findByName, create, listByUser, attach, detach, countForUser, search (autocomplétion), all, idsForUser |
-| `PhotoRepository` | listByUser, countForUser, findOwned, create, setProfile, clearProfile, promoteNext, delete, profilePhoto |
-| `LikeRepository` | exists, add, remove, countReceived, countMatches (mutuel), countUnlikesReceived, recordUnlike |
-| `VisitRepository` | record (upsert), listVisitors |
-| `BlockRepository` | isBlocked (les 2 sens), add, remove, idsInvolving |
-| `ReportRepository` | add |
-| `MessageRepository` | conversations (grosse requête), history, send, markRead, unreadCount, userInfo |
-| `NotificationRepository` | create, unreadCount, markAllRead, list, clearUnreadFrom |
-| `AppointmentRepository` | listFor, create, delete (participant) |
+| `User` | id, email, username, nom, prenom, passwordHash (?string), genre, orientation, bio, birthdate, notePopularite, ville, lat, lng, gpsConsent, emailVerifie, actif, bloqueJusqua, derniereConnexion, createdAt + `withoutPassword()` (session) |
+| `Token` | id, userId, type, token, expiresAt, used, createdAt |
+| `Photo` | id, userId, path, isProfile, position |
+| `Tag` | id, name |
+| `Message` | id, fromUserId, content, sentAt, ts + `toApiArray()` (JSON du polling) |
+| `Appointment` | id, title, description, location, startLabel, isPast, otherId, otherPrenom |
 
-## 2. Services migrés en interne (API publique inchangée)
-- `PopularityService` → LikeRepository + UserRepository::update
-- `NotificationService` → NotificationRepository (wrapper)
-- `MessageService` → MessageRepository + LikeRepository + BlockRepository (canChat)
-- `PhotoService` → PhotoRepository (garde upload/GD, requêtes déléguées)
-- `MatchingService` → UserRepository::suggestCandidates (SQL centralisé) + TagRepository + BlockRepository ; la logique d'orientation/score/tri reste dans le service
+## 2. ViewModels — `src/ViewModel/` (mêmes conventions)
 
-## 3. Classes de Validation — `src/Validation/`
-`Validator` générique **inchangé**. Nouvelles classes (chacune : `validate(...): array<string,string>`, vide = OK) :
-- `RegisterValidator` — email requis/valide/unique, username format/unique, nom/prénom, mot de passe (PasswordPolicy) + confirmation
-- `ProfileValidator` — email (unique sauf soi), genre/orientation (enums), bio, birthdate (16–100 ans)
-- `LocationValidator` — GPS valide OU ville obligatoire (règle matching du sujet)
-- `AppointmentValidator` — titre, date dans le futur, match actif (canChat)
+| Classe | Rôle |
+|---|---|
+| `ProfileCard` | carte universelle (suggestions, recherche, visites, likes) : id, prenom, age, ville, distanceKm, popularityDisplay, sharedTags, bio, avatar, date (?string) |
+| `UserProfile` | profil public consulté + mon profil : id, username, prenom, genre, orientation, bio, age, ville, popularityDisplay, isOnline, lastSeen, avatar |
+| `Conversation` | liste des messages : id, prenom, avatar, lastMessage, lastMessageAtLabel, unread |
+| `NotificationItem` | id, type, label, createdLabel, actorId, actorPrenom, avatar, read (bool) |
+| `MapMarker` + `MapView` | carte interactive (l'exemple cité MapController) : me (?MapMarker) + markers[] ; `toArray()` pour le JSON Twig |
+| `GeoPoint` | coordonnées GPS simples (lat, lng) pour les requêtes partielles |
 
-## 4. Contrôleurs allégés
-- `AuthController` → UserRepository, TokenRepository, RegisterValidator (~14 requêtes → 0)
-- `ProfileController` → PhotoService, TagRepository, ProfileValidator, LocationValidator
-- `UserController` → Like/Visit/Block/Report repositories + services
-- `AppointmentController` → AppointmentRepository + AppointmentValidator
-- `MapController`, `SuggestController`, `SearchController` → repositories
+## 3. Repositories migrés (retours typés)
+- `UserRepository` : `?User` (findById/findByUsername/findByEmail/findActiveById), bool (emailExists…), `?GeoPoint` (findWithPosition), `MapMarker[]` (findPositionsByIds), `create()/update()` inchangés (array, Query::insert)
+- `TagRepository` : `Tag[]` (listByUser), `string[]` (all/search), int[] (idsForUser)
+- `PhotoRepository` : `Photo[]`, `?Photo`, bool (hasProfilePhoto)
+- `LikeRepository` : `ProfileCard[]` (listLikers), bool/int (counts)
+- `VisitRepository` : `ProfileCard[]` (listVisitors)
+- `MessageRepository` : `Conversation[]`, `Message[]`, `?UserProfile` (userInfo)
+- `NotificationRepository` : `NotificationItem[]`
+- `AppointmentRepository` : `Appointment[]`
+- `TokenRepository` : `?Token`
 
-## 5. Vérification (zéro régression) — obligatoire avant commit
-1. Smoke test de **toutes** les routes (GET/POST, connecté + anonyme)
-2. Rejeu des flux critiques curl : inscription → vérification email → login, blacklist mdp, like → match → chat (coupé après unlike/blocage), recherche multi-critères, uploads refusés, CSRF 403
-3. Logs serveur : zéro erreur/warning/notice
-4. Test navigateur rapide (login → suggestions → profil → chat)
-5. `git status` propre + commit du refactoring
+## 4. Services et contrôleurs
+- `MatchingService` : construit `ProfileCard[]` (le décorateur `decorate()` devient un mapping objet) ; logique d'orientation/score/tri inchangée
+- Contrôleurs : plus aucun formatage manuel (`decorate`, `ageOf`, `lastSeen`, `relativeTime`) — les DTO portent ces calculs (`fromRow()`)
+- `ChatController` : `Message::toApiArray()` pour l'API JSON (le JS ne change pas)
+- Session : `$_SESSION['user']` = objet `User` **sans passwordHash** (`withoutPassword()`)
+- Seed : reste en array (outil de dev, inserts bruts dans Query) — documenté
 
-## Contraintes respectées
-- **Pas d'ORM** : les repositories wrappent `Query` (prepared statements) — point de contrôle n°1 de la soutenance intact
-- Aucun changement de schéma, de route, de template ou de comportement
-- Structure de dossiers étendue mais conforme à l'organisation existante
+## 5. Templates Twig migrés (propriétés camelCase)
+`partials/user_card`, `suggestions/index`, `search/index`, `profile/show`, `profile/visits`, `profile/likes`, `user/show`, `messages/index`, `messages/show`, `notifications/index`, `map/index` (via `toArray()`), `appointments/index`, `base.html.twig` (current_user objet). Twig lit les propriétés publiques nativement.
+
+## 6. Vérification (zéro régression) — obligatoire avant commit
+1. Lint PHP de tous les fichiers + `composer dump-autoload` (nouvelles classes PSR-4)
+2. Smoke test des 16 routes
+3. Rejeu des flux critiques curl (inscription → vérification → login, like → match → chat, blocage, recherche, CSRF, uploads)
+4. Vérification des **JSON** : `/api/poll`, `/api/messages/{id}` (clés identiques au JS), `/api/tags`, JSON de la carte
+5. Logs serveur zéro erreur + test navigateur (suggestions, profil, chat, carte)
+6. Commit + push
+
+## Contraintes
+- Toujours pas d'ORM : les repositories wrappent Query (prepared statements)
+- `readonly` PHP 8.3 (conteneur OK) — propriétés immuables, mapping via `fromRow()`
+- Le JS client ne change **pas** (JSON mappé explicitement via `toApiArray()`/`toArray()`)

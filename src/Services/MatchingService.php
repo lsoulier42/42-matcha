@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Entity\User;
 use App\Repository\BlockRepository;
 use App\Repository\TagRepository;
 use App\Repository\UserRepository;
+use App\ViewModel\ProfileCard;
 
 /**
  * Algorithme de suggestions « intelligentes » (section 3.3 du sujet).
@@ -41,6 +43,7 @@ final class MatchingService
 
     /**
      * @param array $filters age_min, age_max, popularity_min, ville, tags[]
+     * @return ProfileCard[]
      */
     public function suggest(int $userId, array $filters = [], string $sort = 'score'): array
     {
@@ -63,19 +66,22 @@ final class MatchingService
             $row['distance_km'] = $this->distanceKm($me, $row);
             $row['same_zone'] = $this->sameZone($me, $row);
             $row['score'] = ($row['same_zone'] ? 100 : 0) + 2 * $row['shared_tags'] + (float) $row['note_popularite'];
-            $candidates[] = $this->decorate($row);
+            $row['age'] = $this->ageOf((string) ($row['birthdate'] ?? ''));
+            $candidates[] = $row;
         }
 
-        return $this->sort($candidates, $sort);
+        $sorted = $this->sort($candidates, $sort);
+
+        return array_map(static fn (array $row): ProfileCard => ProfileCard::fromRow($row), $sorted);
     }
 
     /** Critère obligatoire du sujet : orientation non renseignée = bisexuel. */
-    private function orientationCompatible(array $me, array $other): bool
+    private function orientationCompatible(User $me, array $other): bool
     {
-        if (!$this->covers($me['orientation'] ?? null, $me['genre'] ?? null, $other['genre'] ?? null)) {
+        if (!$this->covers($me->orientation, $me->genre, $other['genre'] ?? null)) {
             return false;
         }
-        if (!$this->covers($other['orientation'] ?? null, $other['genre'] ?? null, $me['genre'] ?? null)) {
+        if (!$this->covers($other['orientation'] ?? null, $other['genre'] ?? null, $me->genre)) {
             return false;
         }
         return true;
@@ -94,10 +100,10 @@ final class MatchingService
     }
 
     /** Construction WHERE + paramètres (filtres : âge, popularité, ville, tags). */
-    private function buildWhere(array $me, array $filters, array $blockedIds): array
+    private function buildWhere(User $me, array $filters, array $blockedIds): array
     {
         $where = ['u.id <> ?', 'u.actif = 1', 'u.email_verifie = 1'];
-        $params = [$me['id']];
+        $params = [$me->id];
 
         if ($blockedIds !== []) {
             $where[] = 'u.id NOT IN (' . implode(',', array_fill(0, count($blockedIds), '?')) . ')';
@@ -152,36 +158,28 @@ final class MatchingService
     }
 
     /** Distance Haversine en km (null si coordonnées manquantes). */
-    private function distanceKm(array $a, array $b): ?float
+    private function distanceKm(User $a, array $b): ?float
     {
-        if ($a['lat'] === null || $a['lng'] === null || $b['lat'] === null || $b['lng'] === null) {
+        if ($a->lat === null || $a->lng === null || $b['lat'] === null || $b['lng'] === null) {
             return null;
         }
-        $lat1 = deg2rad((float) $a['lat']);
+        $lat1 = deg2rad($a->lat);
         $lat2 = deg2rad((float) $b['lat']);
         $dlat = $lat2 - $lat1;
-        $dlng = deg2rad((float) $b['lng'] - (float) $a['lng']);
+        $dlng = deg2rad((float) $b['lng'] - $a->lng);
         $h = sin($dlat / 2) ** 2 + cos($lat1) * cos($lat2) * sin($dlng / 2) ** 2;
         return round(6371.0 * 2 * atan2(sqrt($h), sqrt(1 - $h)), 1);
     }
 
     /** Même zone : < 10 km ou même ville (insensible à la casse). */
-    private function sameZone(array $a, array $b): bool
+    private function sameZone(User $a, array $b): bool
     {
         $dist = $this->distanceKm($a, $b);
         if ($dist !== null) {
             return $dist < (float) $this->settings['matching']['zone_radius_km'];
         }
-        return $a['ville'] !== null && $b['ville'] !== null
-            && mb_strtolower((string) $a['ville']) === mb_strtolower((string) $b['ville']);
-    }
-
-    private function decorate(array $row): array
-    {
-        $row['age'] = $this->ageOf((string) ($row['birthdate'] ?? ''));
-        $row['popularity_display'] = number_format((float) $row['note_popularite'], 1, ',', ' ');
-        unset($row['lat'], $row['lng']);
-        return $row;
+        return $a->ville !== null && $b['ville'] !== null
+            && mb_strtolower($a->ville) === mb_strtolower((string) $b['ville']);
     }
 
     private function ageOf(string $birthdate): ?int

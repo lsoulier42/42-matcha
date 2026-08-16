@@ -7,7 +7,7 @@
     <div class="user-show-main">
         <div class="user-show-photo">
             {% if photos|length > 0 %}
-                {% set main = photos|filter(p => p.is_profile)|first %}
+                {% set main = photos|filter(p => p.isProfile)|first %}
                 {% if main %}
                     <img src="{{ app_url }}{{ main.path }}" alt="{{ user.prenom }}" class="main-photo">
                 {% else %}
@@ -22,15 +22,15 @@
             <h1>{{ user.prenom }} {% if user.age is not null %}({{ user.age }} ans){% endif %}</h1>
 
             <p class="status-line">
-                {% if user.is_online %}
+                {% if user.isOnline %}
                     <span class="online-dot"></span> En ligne
                 {% else %}
-                    <span class="offline-dot"></span> Dernière connexion {{ user.last_seen }}
+                    <span class="offline-dot"></span> Dernière connexion {{ user.lastSeen }}
                 {% endif %}
             </p>
 
             <p class="user-meta">📍 {{ user.ville ?? 'Localisation inconnue' }}</p>
-            <p class="user-meta">⭐ Popularité {{ user.popularity_display }}/10</p>
+            <p class="user-meta">⭐ Popularité {{ user.popularityDisplay }}/10</p>
             <p class="user-meta">Genre : {{ user.genre == 'homme' ? 'Homme' : (user.genre == 'femme' ? 'Femme' : (user.genre == 'autre' ? 'Autre' : 'Non renseigné')) }}</p>
             <p class="user-meta">
                 Préférences : {{ user.orientation == 'hetero' ? 'Hétérosexuel(le)' : (user.orientation == 'homo' ? 'Homosexuel(le)' : (user.orientation == 'bi' ? 'Bisexuel(le)' : 'Bisexuel(le) par défaut')) }}

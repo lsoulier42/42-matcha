@@ -94,16 +94,16 @@ final class AuthController
         if ($row === null) {
             return $render(false, 'Ce lien de vérification est invalide ou déjà utilisé.');
         }
-        if ((int) $row['used'] === 1) {
+        if ($row->used) {
             return $render(false, 'Ce lien de vérification a déjà été utilisé.');
         }
-        if (strtotime((string) $row['expires_at']) < time()) {
+        if (strtotime($row->expiresAt) < time()) {
             return $render(false, 'Ce lien de vérification a expiré.');
         }
 
         // Usage unique : jeton marqué utilisé + compte activé.
-        $this->tokens->markUsed((int) $row['token_id']);
-        $this->users->setEmailVerified((int) $row['user_id']);
+        $this->tokens->markUsed($row->id);
+        $this->users->setEmailVerified($row->userId);
 
         Flash::set('success', 'Votre compte est vérifié, vous pouvez vous connecter.');
         return $response->withHeader('Location', '/auth/login')->withStatus(302);
@@ -134,11 +134,11 @@ final class AuthController
         $user = $this->users->findByUsername($username);
 
         $error = null;
-        if ($user === null || !password_verify($password, (string) $user['password_hash'])) {
+        if ($user === null || !password_verify($password, (string) $user->passwordHash)) {
             $error = 'Identifiants invalides.';
-        } elseif ((int) $user['email_verifie'] !== 1) {
+        } elseif (!$user->emailVerifie) {
             $error = 'Ce compte n\'a pas encore été vérifié : consultez votre boîte e-mail.';
-        } elseif ($user['bloque_jusqua'] !== null && strtotime((string) $user['bloque_jusqua']) > time()) {
+        } elseif ($user->bloqueJusqua !== null && strtotime($user->bloqueJusqua) > time()) {
             $error = 'Ce compte est temporairement suspendu.';
         }
 
@@ -151,12 +151,11 @@ final class AuthController
 
         // Anti session fixation + données de session (jamais le hash du mdp).
         session_regenerate_id(true);
-        $_SESSION['user_id'] = (int) $user['id'];
-        unset($user['password_hash']);
-        $_SESSION['user'] = $user;
-        $this->users->touchLastLogin((int) $user['id']);
+        $_SESSION['user_id'] = $user->id;
+        $_SESSION['user'] = $user->withoutPassword();
+        $this->users->touchLastLogin($user->id);
 
-        Flash::set('success', 'Bonjour ' . $user['prenom'] . ' !');
+        Flash::set('success', 'Bonjour ' . $user->prenom . ' !');
         return $this->redirectToSuggestions($response);
     }
 
@@ -206,9 +205,9 @@ final class AuthController
         if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
             $user = $this->users->findByEmail($email);
             if ($user !== null) {
-                $token = $this->createToken((int) $user['id'], 'reset_password');
+                $token = $this->createToken($user->id, 'reset_password');
                 $link = $this->appUrl . '/auth/reset/' . $token;
-                $this->mail->sendPasswordReset($email, (string) $user['username'], $link);
+                $this->mail->sendPasswordReset($email, $user->username, $link);
             }
         }
 
@@ -234,9 +233,9 @@ final class AuthController
         }
 
         $token = (string) ($args['token'] ?? '');
-        $row = $this->tokens->findValidReset($token);
+        $tokenEntity = $this->tokens->findValidReset($token);
 
-        if ($row === null) {
+        if ($tokenEntity === null) {
             return $this->twig->render($response, 'auth/reset.html.twig', [
                 'token' => $token,
                 'token_valid' => false,
@@ -261,8 +260,8 @@ final class AuthController
             ]);
         }
 
-        $this->tokens->markUsed((int) $row['id']);
-        $this->users->update((int) $row['user_id'], [
+        $this->tokens->markUsed($tokenEntity->id);
+        $this->users->update($tokenEntity->userId, [
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
         ]);
 

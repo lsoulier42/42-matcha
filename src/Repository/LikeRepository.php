@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\ViewModel\ProfileCard;
 
 /**
  * Likes (un par paire), unlikes tracés, compteurs de popularité.
@@ -64,11 +65,11 @@ final class LikeRepository
         );
     }
 
-    /** « Qui m'a liké » avec l'auteur et sa photo de profil. */
+    /** « Qui m'a liké » : cartes des auteurs avec leur photo. */
     public function listLikers(int $userId): array
     {
-        return $this->db->fetchAll(
-            'SELECT u.id, u.username, u.prenom, u.ville, u.note_popularite, u.birthdate,
+        $rows = $this->db->fetchAll(
+            'SELECT u.id, u.username, u.prenom, u.ville, u.note_popularite, u.birthdate, u.bio,
                     l.created_at, p.path AS photo
              FROM likes l
              JOIN users u ON u.id = l.from_user_id
@@ -77,5 +78,6 @@ final class LikeRepository
              ORDER BY l.created_at DESC',
             [$userId]
         );
+        return array_map(static fn (array $row): ProfileCard => ProfileCard::fromRow($row), $rows);
     }
 }

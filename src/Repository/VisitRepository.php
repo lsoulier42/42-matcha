@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\ViewModel\ProfileCard;
 
 /**
  * Historique des visites de profils (dernière visite par paire).
@@ -26,11 +27,11 @@ final class VisitRepository
         );
     }
 
-    /** « Qui a consulté mon profil » avec le visiteur et sa photo. */
+    /** « Qui a consulté mon profil » : cartes des visiteurs. */
     public function listVisitors(int $visitedId): array
     {
-        return $this->db->fetchAll(
-            'SELECT u.id, u.username, u.prenom, u.ville, u.note_popularite, u.birthdate,
+        $rows = $this->db->fetchAll(
+            'SELECT u.id, u.username, u.prenom, u.ville, u.note_popularite, u.birthdate, u.bio,
                     v.viewed_at, p.path AS photo
              FROM visits v
              JOIN users u ON u.id = v.visitor_id
@@ -39,5 +40,6 @@ final class VisitRepository
              ORDER BY v.viewed_at DESC',
             [$visitedId]
         );
+        return array_map(static fn (array $row): ProfileCard => ProfileCard::fromRow($row), $rows);
     }
 }

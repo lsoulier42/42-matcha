@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\Entity\Message;
+use App\ViewModel\Conversation;
+use App\ViewModel\UserProfile;
 
 /**
  * Messages du chat (réservé aux utilisateurs connectés = like mutuel).
@@ -18,7 +21,7 @@ final class MessageRepository
     /** Conversations (matchs) avec dernier message et non-lus. */
     public function conversations(int $userId): array
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             'SELECT u.id, u.username, u.prenom, u.ville, u.note_popularite, u.derniere_connexion,
                     p.path AS avatar,
                     (SELECT m.content FROM messages m
@@ -45,13 +48,14 @@ final class MessageRepository
                 $userId, $userId, $userId, $userId,
             ]
         );
+        return array_map(static fn (array $row): Conversation => Conversation::fromRow($row), $rows);
     }
 
     /** Historique du fil (optionnellement après un id, pour le polling). */
     public function history(int $userId, int $otherId, ?int $afterId = null): array
     {
         if ($afterId !== null) {
-            return $this->db->fetchAll(
+            $rows = $this->db->fetchAll(
                 'SELECT m.id, m.from_user_id, m.content, m.sent_at
                  FROM messages m
                  WHERE ((m.from_user_id = ? AND m.to_user_id = ?) OR (m.from_user_id = ? AND m.to_user_id = ?))
@@ -59,14 +63,16 @@ final class MessageRepository
                  ORDER BY m.id ASC',
                 [$userId, $otherId, $otherId, $userId, $afterId]
             );
+        } else {
+            $rows = $this->db->fetchAll(
+                'SELECT m.id, m.from_user_id, m.content, m.sent_at
+                 FROM messages m
+                 WHERE (m.from_user_id = ? AND m.to_user_id = ?) OR (m.from_user_id = ? AND m.to_user_id = ?)
+                 ORDER BY m.id ASC',
+                [$userId, $otherId, $otherId, $userId]
+            );
         }
-        return $this->db->fetchAll(
-            'SELECT m.id, m.from_user_id, m.content, m.sent_at
-             FROM messages m
-             WHERE (m.from_user_id = ? AND m.to_user_id = ?) OR (m.from_user_id = ? AND m.to_user_id = ?)
-             ORDER BY m.id ASC',
-            [$userId, $otherId, $otherId, $userId]
-        );
+        return array_map(static fn (array $row): Message => Message::fromRow($row), $rows);
     }
 
     public function send(int $fromUserId, int $toUserId, string $content): int
@@ -97,14 +103,16 @@ final class MessageRepository
     }
 
     /** Infos publiques d'un utilisateur (en-tête de discussion). */
-    public function userInfo(int $userId): ?array
+    public function userInfo(int $userId): ?UserProfile
     {
-        return $this->db->fetch(
-            'SELECT u.id, u.username, u.prenom, u.ville, u.derniere_connexion, p.path AS avatar
+        $row = $this->db->fetch(
+            'SELECT u.id, u.username, u.prenom, u.ville, u.derniere_connexion, u.genre, u.orientation,
+                    u.bio, u.birthdate, u.note_popularite, p.path AS avatar
              FROM users u
              LEFT JOIN photos p ON p.user_id = u.id AND p.is_profile = 1
              WHERE u.id = ?',
             [$userId]
         );
+        return $row === null ? null : UserProfile::fromRow($row);
     }
 }

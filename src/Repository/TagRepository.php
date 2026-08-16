@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\Entity\Tag;
 
 /**
  * Tags réutilisables (intérêts partagés) et liaison user_tags.
@@ -27,10 +28,11 @@ final class TagRepository
         return $this->db->lastInsertId();
     }
 
-    /** Tous les tags (ordre alphabétique). */
+    /** Tous les noms de tags (ordre alphabétique). */
     public function all(): array
     {
-        return $this->db->fetchAll('SELECT name FROM tags ORDER BY name ASC');
+        $rows = $this->db->fetchAll('SELECT name FROM tags ORDER BY name ASC');
+        return array_column($rows, 'name');
     }
 
     /** Autocomplétion : 10 premiers tags commençant par $q. */
@@ -44,14 +46,16 @@ final class TagRepository
         return array_column($rows, 'name');
     }
 
+    /** @return Tag[] */
     public function listByUser(int $userId): array
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             'SELECT t.id, t.name FROM tags t
              JOIN user_tags ut ON ut.tag_id = t.id
              WHERE ut.user_id = ? ORDER BY t.name ASC',
             [$userId]
         );
+        return array_map(static fn (array $row): Tag => Tag::fromRow($row), $rows);
     }
 
     /** Ids des tags d'un utilisateur. */

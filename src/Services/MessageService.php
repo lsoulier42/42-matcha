@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Repository\BlockRepository;
 use App\Repository\LikeRepository;
 use App\Repository\MessageRepository;
+use App\ViewModel\UserProfile;
 
 /**
  * Chat réservé aux utilisateurs « connectés » (like mutuel, section 3.6).
@@ -48,7 +49,7 @@ final class MessageService
     }
 
     /** Infos publiques d'un utilisateur (pour l'en-tête de discussion). */
-    public function userInfo(int $userId): ?array
+    public function userInfo(int $userId): ?UserProfile
     {
         return $this->messages->userInfo($userId);
     }

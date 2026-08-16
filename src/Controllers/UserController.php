@@ -14,6 +14,7 @@ use App\Repository\VisitRepository;
 use App\Services\NotificationService;
 use App\Services\PopularityService;
 use App\Support\Flash;
+use App\ViewModel\UserProfile;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
@@ -70,13 +71,8 @@ final class UserController
         $iLiked = $this->likes->exists($me, $id);
         $likedMe = $this->likes->exists($id, $me);
 
-        $user['age'] = $this->ageOf((string) ($user['birthdate'] ?? ''));
-        $user['popularity_display'] = number_format((float) $user['note_popularite'], 1, ',', ' ');
-        $user['is_online'] = $this->isOnline((string) ($user['derniere_connexion'] ?? ''));
-        $user['last_seen'] = $this->lastSeen((string) ($user['derniere_connexion'] ?? ''));
-
         return $this->twig->render($response, 'user/show.html.twig', [
-            'user' => $user,
+            'user' => UserProfile::fromUser($user),
             'photos' => $this->photos->listByUser($id),
             'tags' => $this->tags->listByUser($id),
             'i_liked' => $iLiked,
@@ -208,43 +204,6 @@ final class UserController
     // -------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------
-
-    private function isOnline(string $lastSeen): bool
-    {
-        if ($lastSeen === '') {
-            return false;
-        }
-        $ts = strtotime($lastSeen);
-        return $ts !== false && (time() - $ts) < 300; // en ligne depuis moins de 5 minutes
-    }
-
-    private function lastSeen(string $lastSeen): string
-    {
-        $ts = strtotime($lastSeen);
-        if ($ts === false || $ts <= 0) {
-            return 'jamais';
-        }
-        $diff = time() - $ts;
-        if ($diff < 60) {
-            return 'à l\'instant';
-        }
-        if ($diff < 3600) {
-            return 'il y a ' . (int) floor($diff / 60) . ' min';
-        }
-        if ($diff < 86400) {
-            return 'il y a ' . (int) floor($diff / 3600) . ' h';
-        }
-        return 'le ' . date('d/m/Y à H:i', $ts);
-    }
-
-    private function ageOf(string $birthdate): ?int
-    {
-        if ($birthdate === '') {
-            return null;
-        }
-        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $birthdate);
-        return $dt === false ? null : (int) $dt->diff(new \DateTimeImmutable('now'))->y;
-    }
 
     /** Retour sur la page du profil (jamais de redirection externe). */
     private function backUrl(Request $request, int $id): string

@@ -10,8 +10,8 @@
 {% block content %}
 <h1>Carte des utilisateurs</h1>
 
-{% if me.lat is not null %}
-    <p class="search-hint">Votre position : <strong>{{ me.prenom }}</strong> — les marqueurs roses sont des profils suggérés, cliquez pour les découvrir.</p>
+{% if map.me is not null %}
+    <p class="search-hint">Votre position : <strong>{{ map.me.prenom }}</strong> — les marqueurs roses sont des profils suggérés, cliquez pour les découvrir.</p>
 {% else %}
     <div class="alert alert-info">
         Ajoutez votre localisation (GPS ou manuelle) dans <a href="/profile">votre profil</a>
@@ -26,8 +26,8 @@
     Utilisez la <a href="/suggestions">liste des suggestions</a> à la place.
 </div>
 
-{% if markers|length > 0 %}
-    <p class="map-count">{{ markers|length }} profil(s) positionné(s) affiché(s)</p>
+{% if map.markers|length > 0 %}
+    <p class="map-count">{{ map.markers|length }} profil(s) positionné(s) affiché(s)</p>
 {% endif %}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -37,8 +37,8 @@
         'use strict';
         var mapEl = document.getElementById('map');
         var fallback = document.getElementById('map-fallback');
-        var markers = {{ markers|json_encode|raw }};
-        var me = {{ me|json_encode|raw }};
+        var markers = {{ map.markers|map(m => m.toArray())|json_encode|raw }};
+        var me = {{ map.me ? map.me.toArray()|json_encode|raw : 'null' }};
 
         if (typeof L === 'undefined') {
             mapEl.hidden = true;
@@ -46,7 +46,7 @@
             return;
         }
 
-        var center = (me.lat !== null && me.lng !== null)
+        var center = (me !== null)
             ? [me.lat, me.lng]
             : (markers.length > 0 ? [markers[0].lat, markers[0].lng] : [46.6, 2.4]);
 
@@ -56,7 +56,7 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        if (me.lat !== null && me.lng !== null) {
+        if (me !== null) {
             L.marker([me.lat, me.lng], { title: me.prenom })
                 .addTo(map)
                 .bindPopup('<strong>' + me.prenom + '</strong><br>Vous');

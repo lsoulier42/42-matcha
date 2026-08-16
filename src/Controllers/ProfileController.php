@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Entity\User;
 use App\Repository\LikeRepository;
 use App\Repository\TagRepository;
 use App\Repository\UserRepository;
@@ -247,7 +248,7 @@ final class ProfileController
     {
         $userId = (int) $_SESSION['user_id'];
         return $this->twig->render($response, 'profile/visits.html.twig', [
-            'visitors' => $this->decorate($this->visits->listVisitors($userId)),
+            'visitors' => $this->visits->listVisitors($userId),
         ]);
     }
 
@@ -255,7 +256,7 @@ final class ProfileController
     {
         $userId = (int) $_SESSION['user_id'];
         return $this->twig->render($response, 'profile/likes.html.twig', [
-            'likers' => $this->decorate($this->likes->listLikers($userId)),
+            'likers' => $this->likes->listLikers($userId),
         ]);
     }
 
@@ -263,13 +264,13 @@ final class ProfileController
     // Helpers
     // -------------------------------------------------------------
 
-    /** Données partagées de la page profil. */
-    private function profileViewData(array $user, array $errors = []): array
+    /** Données partagées de la page profil (formulaire + galerie). */
+    private function profileViewData(User $user, array $errors = []): array
     {
-        $userId = (int) $user['id'];
+        $userId = $user->id;
 
         return [
-            'user' => $this->decorate([$user])[0],
+            'user' => $user->withoutPassword(),
             'photos' => $this->photos->listByUser($userId),
             'tags' => $this->tags->listByUser($userId),
             'popularity' => $this->popularity->score($userId),
@@ -277,34 +278,12 @@ final class ProfileController
         ];
     }
 
-    /** Enrichit des lignes utilisateur : âge, avatar, note formatée. */
-    private function decorate(array $rows): array
-    {
-        foreach ($rows as &$row) {
-            $row['age'] = $this->ageOf((string) ($row['birthdate'] ?? ''));
-            $row['popularity_display'] = number_format((float) ($row['note_popularite'] ?? 0), 1, ',', ' ');
-            $row['avatar'] = $row['photo'] ?? null;
-            unset($row['birthdate'], $row['photo']);
-        }
-        return $rows;
-    }
-
-    private function ageOf(string $birthdate): ?int
-    {
-        if ($birthdate === '' || $birthdate === null) {
-            return null;
-        }
-        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $birthdate);
-        return $dt === false ? null : (int) $dt->diff(new \DateTimeImmutable('now'))->y;
-    }
-
     /** Après toute modification, la session reflète le profil à jour. */
     private function refreshSession(int $userId): void
     {
         $user = $this->users->findById($userId);
         if ($user !== null) {
-            unset($user['password_hash']);
-            $_SESSION['user'] = $user;
+            $_SESSION['user'] = $user->withoutPassword();
         }
     }
 }

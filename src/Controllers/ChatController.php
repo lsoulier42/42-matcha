@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Entity\Message;
 use App\Services\MessageService;
 use App\Support\Flash;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -27,15 +28,8 @@ final class ChatController
     public function index(Request $request, Response $response): Response
     {
         $userId = (int) $_SESSION['user_id'];
-        $conversations = $this->messages->conversations($userId);
-
-        foreach ($conversations as &$conv) {
-            $conv['last_message_at_display'] = $this->relativeTime((string) ($conv['last_message_at'] ?? ''));
-        }
-        unset($conv);
-
         return $this->twig->render($response, 'messages/index.html.twig', [
-            'conversations' => $conversations,
+            'conversations' => $this->messages->conversations($userId),
         ]);
     }
 
@@ -51,14 +45,14 @@ final class ChatController
 
         $this->messages->markRead($userId, $otherId);
 
-        $other = $this->messages->userInfo($otherId) ?? ['prenom' => '', 'username' => ''];
+        $other = $this->messages->userInfo($otherId);
         $history = $this->messages->history($userId, $otherId);
 
         return $this->twig->render($response, 'messages/show.html.twig', [
             'other' => $other,
             'other_id' => $otherId,
             'history' => $history,
-            'last_id' => count($history) > 0 ? (int) $history[count($history) - 1]['id'] : 0,
+            'last_id' => count($history) > 0 ? $history[count($history) - 1]->id : 0,
         ]);
     }
 
@@ -101,30 +95,9 @@ final class ChatController
         }
 
         $history = $this->messages->history($userId, $otherId, $after > 0 ? $after : null);
-        foreach ($history as &$msg) {
-            $msg['ts'] = strtotime((string) $msg['sent_at']);
-        }
-        unset($msg);
-        $response->getBody()->write(json_encode($history, JSON_UNESCAPED_UNICODE));
-        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
-    }
+        $payload = array_map(static fn (Message $message): array => $message->toApiArray(), $history);
 
-    private function relativeTime(string $datetime): string
-    {
-        $ts = strtotime($datetime);
-        if ($ts === false || $ts <= 0) {
-            return '';
-        }
-        $diff = time() - $ts;
-        if ($diff < 60) {
-            return 'à l\'instant';
-        }
-        if ($diff < 3600) {
-            return 'il y a ' . (int) floor($diff / 60) . ' min';
-        }
-        if ($diff < 86400) {
-            return 'il y a ' . (int) floor($diff / 3600) . ' h';
-        }
-        return date('d/m/Y', $ts);
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
+        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 }

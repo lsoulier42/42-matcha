@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\Entity\User;
+use App\ViewModel\MapMarker;
 
 /**
  * Accès aux données des utilisateurs. Toutes les requêtes passent par
  * la mini-lib Query (prepared statements) — pas d'ORM, conformément au sujet.
+ * Les lignes SQL sont mappées en entités (User) ou ViewModels (MapMarker).
  */
 final class UserRepository
 {
@@ -16,32 +19,36 @@ final class UserRepository
     {
     }
 
-    public function findById(int $id): ?array
+    public function findById(int $id): ?User
     {
-        return $this->db->fetch('SELECT * FROM users WHERE id = ?', [$id]);
+        $row = $this->db->fetch('SELECT * FROM users WHERE id = ?', [$id]);
+        return $row === null ? null : User::fromRow($row);
     }
 
-    public function findActiveById(int $id): ?array
+    public function findActiveById(int $id): ?User
     {
-        return $this->db->fetch('SELECT * FROM users WHERE id = ? AND actif = 1', [$id]);
+        $row = $this->db->fetch('SELECT * FROM users WHERE id = ? AND actif = 1', [$id]);
+        return $row === null ? null : User::fromRow($row);
     }
 
-    public function findByUsername(string $username, bool $activeOnly = true): ?array
+    public function findByUsername(string $username, bool $activeOnly = true): ?User
     {
         $sql = 'SELECT * FROM users WHERE username = ?';
         if ($activeOnly) {
             $sql .= ' AND actif = 1';
         }
-        return $this->db->fetch($sql, [$username]);
+        $row = $this->db->fetch($sql, [$username]);
+        return $row === null ? null : User::fromRow($row);
     }
 
-    public function findByEmail(string $email, bool $activeOnly = true): ?array
+    public function findByEmail(string $email, bool $activeOnly = true): ?User
     {
         $sql = 'SELECT * FROM users WHERE email = ?';
         if ($activeOnly) {
             $sql .= ' AND actif = 1';
         }
-        return $this->db->fetch($sql, [$email]);
+        $row = $this->db->fetch($sql, [$email]);
+        return $row === null ? null : User::fromRow($row);
     }
 
     /** Existe-t-il un utilisateur avec cet e-mail (hors $excludeId éventuel) ? */
@@ -81,24 +88,29 @@ final class UserRepository
         $this->db->update('users', ['email_verifie' => 1], 'id = ?', [$id]);
     }
 
-    /** Position GPS (carte interactive). */
-    public function findWithPosition(int $id): ?array
+    /** Position GPS d'un utilisateur (marqueur « vous » de la carte). */
+    public function findWithPosition(int $id): ?MapMarker
     {
-        return $this->db->fetch('SELECT id, prenom, lat, lng FROM users WHERE id = ?', [$id]);
+        $row = $this->db->fetch('SELECT id, prenom, lat, lng FROM users WHERE id = ?', [$id]);
+        if ($row === null || $row['lat'] === null || $row['lng'] === null) {
+            return null;
+        }
+        return MapMarker::fromRow($row);
     }
 
-    /** Positions GPS des ids donnés (carte interactive). */
+    /** Positions GPS des ids donnés (marqueurs de la carte). */
     public function findPositionsByIds(array $ids): array
     {
         if ($ids === []) {
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             "SELECT id, prenom, lat, lng, note_popularite FROM users
              WHERE id IN ($placeholders) AND lat IS NOT NULL AND lng IS NOT NULL",
             $ids
         );
+        return array_map(static fn (array $row): MapMarker => MapMarker::fromRow($row), $rows);
     }
 
     public function count(): int
@@ -111,6 +123,8 @@ final class UserRepository
      * photo de profil et nombre de tags partagés avec l'utilisateur courant.
      *
      * @param string[] $where conditions SQL (fusionnées par AND)
+     * @return array<array<string, mixed>> lignes brutes (le service applique
+     *         l'orientation, le score et le tri avant mapping ProfileCard)
      */
     public function suggestCandidates(array $where, array $params, array $myTagIds): array
     {

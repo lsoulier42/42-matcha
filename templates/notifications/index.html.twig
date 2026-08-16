@@ -8,26 +8,26 @@
 {% if items|length > 0 %}
     <div class="notification-list">
         {% for item in items %}
-            <div class="notification-item {{ item.read_at is null ? 'unread' : '' }}">
+            <div class="notification-item {{ not item.read ? 'unread' : '' }}">
                 <div class="notification-avatar">
                     {% if item.avatar %}
-                        <img src="{{ app_url }}{{ item.avatar }}" alt="{{ item.prenom }}">
+                        <img src="{{ app_url }}{{ item.avatar }}" alt="{{ item.actorPrenom }}">
                     {% else %}
-                        <div class="avatar-placeholder small">{{ (item.prenom ?? '?')|first|upper }}</div>
+                        <div class="avatar-placeholder small">{{ (item.actorPrenom ?? '?')|first|upper }}</div>
                     {% endif %}
                 </div>
                 <div class="notification-body">
                     <div class="notification-text">
-                        {% if item.username %}
-                            <strong>{{ item.prenom }}</strong> {{ item.label }}
+                        {% if item.actorUsername %}
+                            <strong>{{ item.actorPrenom }}</strong> {{ item.label }}
                         {% else %}
                             {{ item.label }}
                         {% endif %}
                     </div>
-                    <time class="notification-date">{{ item.created_display }}</time>
+                    <time class="notification-date">{{ item.createdLabel }}</time>
                 </div>
-                {% if item.type in ['like', 'match', 'message'] and item.username %}
-                    <a class="btn btn-ghost btn-sm" href="/user/{{ item.actor_id }}">Voir</a>
+                {% if item.type in ['like', 'match', 'message'] and item.actorUsername %}
+                    <a class="btn btn-ghost btn-sm" href="/user/{{ item.actorId }}">Voir</a>
                 {% endif %}
             </div>
         {% endfor %}

@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Repository\UserRepository;
 use App\Services\MatchingService;
+use App\ViewModel\MapView;
+use App\ViewModel\ProfileCard;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
@@ -29,32 +31,11 @@ final class MapController
         $userId = (int) $_SESSION['user_id'];
 
         $profiles = $this->matching->suggest($userId, [], 'score');
-        $ids = array_column($profiles, 'id');
-        $byId = array_column($this->users->findPositionsByIds($ids), null, 'id');
-
-        $markers = [];
-        foreach ($profiles as $profile) {
-            if (isset($byId[$profile['id']])) {
-                $markers[] = [
-                    'id' => (int) $profile['id'],
-                    'prenom' => $profile['prenom'],
-                    'lat' => (float) $byId[$profile['id']]['lat'],
-                    'lng' => (float) $byId[$profile['id']]['lng'],
-                    'popularity_display' => $profile['popularity_display'],
-                    'ville' => $profile['ville'],
-                ];
-            }
-        }
-
-        $me = $this->users->findWithPosition($userId);
+        $ids = array_map(static fn (ProfileCard $card): int => $card->id, $profiles);
+        $markers = $this->users->findPositionsByIds($ids);
 
         return $this->twig->render($response, 'map/index.html.twig', [
-            'markers' => $markers,
-            'me' => [
-                'prenom' => $me['prenom'] ?? '',
-                'lat' => $me['lat'] !== null ? (float) $me['lat'] : null,
-                'lng' => $me['lng'] !== null ? (float) $me['lng'] : null,
-            ],
+            'map' => new MapView($this->users->findWithPosition($userId), $markers),
         ]);
     }
 }

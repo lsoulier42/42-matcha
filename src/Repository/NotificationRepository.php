@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Db\Query;
+use App\ViewModel\NotificationItem;
 
 /**
  * Notifications temps réel (like, visit, message, match, unlike).
@@ -43,10 +44,12 @@ final class NotificationRepository
     /**
      * Liste des notifications récentes avec l'auteur ;
      * les notifications d'utilisateurs bloqués sont exclues.
+     *
+     * @return NotificationItem[]
      */
     public function list(int $userId, int $limit = 50): array
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             'SELECT n.id, n.type, n.actor_id, n.created_at, n.read_at,
                     a.username, a.prenom, a.ville, p.path AS avatar
              FROM notifications n
@@ -60,6 +63,7 @@ final class NotificationRepository
              LIMIT ' . (int) $limit,
             [$userId, $userId]
         );
+        return array_map(static fn (array $row): NotificationItem => NotificationItem::fromRow($row), $rows);
     }
 
     /** Supprime les notifications non lues d'un acteur donné (unlike/blocage). */
