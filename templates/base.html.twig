@@ -22,7 +22,10 @@
                     Notifications<span class="badge" data-badge="notifs">{{ unread_notifs > 0 ? unread_notifs : '' }}</span>
                 </a>
                 <a href="/profile">Mon profil</a>
-                <a href="/logout">Déconnexion</a>
+                <form method="post" action="/logout" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="nav-button">Déconnexion</button>
+                </form>
             {% else %}
                 <a href="/auth/login">Connexion</a>
                 <a href="/auth/register">Inscription</a>
@@ -32,6 +35,13 @@
 </header>
 
 <main class="container">
+    {% if flash is defined %}
+        {% for type, messages in flash %}
+            {% for message in messages %}
+                <div class="alert alert-{{ type }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
     {% block content %}{% endblock %}
 </main>
 

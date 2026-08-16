@@ -45,11 +45,11 @@ final class Query
         return $this->run($sql, $params)->fetchAll();
     }
 
-    /** Retourne la première colonne de la première ligne. */
+    /** Retourne la première colonne de la première ligne, ou null si aucune ligne. */
     public function value(string $sql, array $params = []): mixed
     {
         $v = $this->run($sql, $params)->fetchColumn();
-        return $v;
+        return $v === false ? null : $v;
     }
 
     /** INSERT générique : retourne l'id créé. */

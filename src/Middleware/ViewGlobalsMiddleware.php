@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Support\Flash;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
@@ -32,6 +33,9 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
         $userId = $_SESSION['user_id'] ?? null;
         $env->addGlobal('current_user', $userId !== null ? ($_SESSION['user'] ?? null) : null);
         $env->addGlobal('csrf_token', $_SESSION['csrf_token'] ?? '');
+
+        // Messages flash (consommés à l'affichage).
+        $env->addGlobal('flash', Flash::pull());
 
         // Badges temps réel : recalculés à chaque requête (polling / pages).
         $env->addGlobal('unread_messages', $_SESSION['unread_messages'] ?? 0);

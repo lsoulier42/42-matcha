@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Connexion</h1>
+
+    {% if errors is defined and errors|length > 0 %}
+        <div class="alert alert-error">
+            {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" action="/auth/login" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="form-field">
+            <label for="username">Nom d'utilisateur</label>
+            <input type="text" id="username" name="username" value="{{ old.username ?? '' }}" maxlength="30" required autofocus>
+        </div>
+
+        <div class="form-field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Se connecter</button>
+    </form>
+
+    <p class="form-alt"><a href="/auth/forgot">Mot de passe oublié ?</a></p>
+    <p class="form-alt">Pas encore de compte ? <a href="/auth/register">S'inscrire</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Créer un compte</h1>
+
+    {% if errors is defined and errors|length > 0 %}
+        <div class="alert alert-error">
+            {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" action="/auth/register" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="form-field">
+            <label for="prenom">Prénom *</label>
+            <input type="text" id="prenom" name="prenom" value="{{ old.prenom ?? '' }}" maxlength="100" required autofocus>
+        </div>
+
+        <div class="form-field">
+            <label for="nom">Nom de famille *</label>
+            <input type="text" id="nom" name="nom" value="{{ old.nom ?? '' }}" maxlength="100" required>
+        </div>
+
+        <div class="form-field">
+            <label for="username">Nom d'utilisateur *</label>
+            <input type="text" id="username" name="username" value="{{ old.username ?? '' }}" maxlength="30" required>
+            <div class="form-error">3 à 30 caractères : lettres, chiffres, _</div>
+        </div>
+
+        <div class="form-field">
+            <label for="email">Adresse e-mail *</label>
+            <input type="email" id="email" name="email" value="{{ old.email ?? '' }}" maxlength="190" required>
+        </div>
+
+        <div class="form-field">
+            <label for="password">Mot de passe *</label>
+            <input type="password" id="password" name="password" required>
+            <div class="form-error">8 caractères minimum : majuscule, minuscule, chiffre, symbole</div>
+        </div>
+
+        <div class="form-field">
+            <label for="password_confirm">Confirmation du mot de passe *</label>
+            <input type="password" id="password_confirm" name="password_confirm" required>
+        </div>
+
+        <button class="btn btn-primary" type="submit">S'inscrire</button>
+    </form>
+
+    <p class="form-alt">Déjà un compte ? <a href="/auth/login">Se connecter</a></p>
+</div>
+{% endblock %}

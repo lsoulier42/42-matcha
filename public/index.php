@@ -39,15 +39,15 @@ $settings = $container->get('settings');
  * Ordre d'exécution des middlewares (onion : le dernier ajouté s'exécute en premier) :
  *   1. ErrorMiddleware        (attrape tout Throwable)
  *   2. SessionMiddleware      (session PHP démarrée avant tout)
- *   3. ViewGlobalsMiddleware  (variables Twig : utilisateur courant, CSRF, badges)
- *   4. CsrfMiddleware         (jeton requis sur tout POST)
+ *   3. CsrfMiddleware         (génère le jeton, valide les POST)
+ *   4. ViewGlobalsMiddleware  (variables Twig : utilisateur courant, CSRF, badges)
  *   5. RoutingMiddleware
  *   6. BodyParsingMiddleware  (parsing JSON pour l'AJAX)
  */
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
-$app->add(new App\Middleware\CsrfMiddleware());
 $app->add(new App\Middleware\ViewGlobalsMiddleware($container->get(Slim\Views\Twig::class), $settings));
+$app->add(new App\Middleware\CsrfMiddleware());
 $app->add(new App\Middleware\SessionMiddleware($settings['session']));
 $app->addErrorMiddleware($settings['app']['debug'], true, true);
 

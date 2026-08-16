@@ -43,8 +43,8 @@ final class CsrfMiddleware implements MiddlewareInterface
 
     private function forbidden(Request $request): Response
     {
-        $response = new SlimResponse(403, ['Content-Type' => 'application/json; charset=utf-8']);
+        $response = new SlimResponse(403);
         $response->getBody()->write(json_encode(['error' => 'csrf_invalide'], JSON_UNESCAPED_UNICODE));
-        return $response;
+        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 }

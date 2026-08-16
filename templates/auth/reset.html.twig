@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Réinitialisation du mot de passe — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    {% if token_valid %}
+        <h1>Nouveau mot de passe</h1>
+
+        {% if errors is defined and errors|length > 0 %}
+            <div class="alert alert-error">
+                {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="/auth/reset/{{ token }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="form-field">
+                <label for="password">Nouveau mot de passe</label>
+                <input type="password" id="password" name="password" required autofocus>
+                <div class="form-error">8 caractères minimum : majuscule, minuscule, chiffre, symbole</div>
+            </div>
+
+            <div class="form-field">
+                <label for="password_confirm">Confirmation</label>
+                <input type="password" id="password_confirm" name="password_confirm" required>
+            </div>
+
+            <button class="btn btn-primary" type="submit">Réinitialiser</button>
+        </form>
+    {% else %}
+        <h1>Lien invalide</h1>
+        <div class="alert alert-error">
+            {% if errors is defined %}{{ errors.token }}{% else %}Ce lien de réinitialisation est invalide, déjà utilisé ou expiré.{% endif %}
+        </div>
+        <p class="form-alt"><a href="/auth/forgot">Demander un nouveau lien</a></p>
+    {% endif %}
+</div>
+{% endblock %}

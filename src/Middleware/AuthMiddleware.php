@@ -23,9 +23,9 @@ final class AuthMiddleware implements MiddlewareInterface
         if ($userId === null) {
             $path = $request->getUri()->getPath();
             if (str_starts_with($path, '/api')) {
-                $response = new SlimResponse(401, ['Content-Type' => 'application/json; charset=utf-8']);
+                $response = new SlimResponse(401);
                 $response->getBody()->write(json_encode(['error' => 'non_authentifie'], JSON_UNESCAPED_UNICODE));
-                return $response;
+                return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
             }
             return (new SlimResponse(302))->withHeader('Location', '/auth/login');
         }

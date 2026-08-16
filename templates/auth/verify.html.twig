@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérification du compte — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    {% if ok %}
+        <h1>Compte vérifié</h1>
+        <div class="alert alert-success">{{ message }}</div>
+        <p><a class="btn btn-primary" href="/auth/login">Se connecter</a></p>
+    {% else %}
+        <h1>Vérification impossible</h1>
+        <div class="alert alert-error">{{ message }}</div>
+        <p class="form-alt"><a href="/auth/login">Retour à la connexion</a></p>
+    {% endif %}
+</div>
+{% endblock %}
