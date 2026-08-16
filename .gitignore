@@ -1,0 +1,20 @@
+# Credentials — exigence du sujet (ne JAMAIS committer)
+.env
+*.env
+!.env.example
+
+# PHP / Composer (pas de dépendances autorisées, mais au cas où)
+/vendor/
+composer.lock
+
+# Docker
+/docker-data/
+
+# Logs & temp
+*.log
+/tmp/
+
+# OS / éditeurs
+.DS_Store
+.idea/
+.vscode/
