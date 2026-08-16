@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+<section class="hero">
+    <h1>Rencontrez des personnes qui vous correspondent</h1>
+    <p>
+        Matcha vous suggère des profils selon votre orientation, votre localisation,
+        vos centres d'intérêt et votre popularité.
+    </p>
+    <div class="hero-actions">
+        <a class="btn btn-primary" href="/auth/register">Créer un compte</a>
+        <a class="btn btn-outline" href="/auth/login">Se connecter</a>
+    </div>
+</section>
+
+<section class="features">
+    <article class="feature-card">
+        <h2>Suggestions intelligentes</h2>
+        <p>Des profils triés par proximité, tags partagés et popularité.</p>
+    </article>
+    <article class="feature-card">
+        <h2>Chat en temps réel</h2>
+        <p>Discutez instantanément avec vos matchs, où que vous soyez.</p>
+    </article>
+    <article class="feature-card">
+        <h2>Recherche avancée</h2>
+        <p>Affinez par âge, popularité, localisation et centres d'intérêt.</p>
+    </article>
+</section>
+{% endblock %}

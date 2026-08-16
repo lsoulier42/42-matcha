@@ -1,0 +1,5 @@
+# Slim 4 — toutes les requêtes non-fichier passent par le bootstrap
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

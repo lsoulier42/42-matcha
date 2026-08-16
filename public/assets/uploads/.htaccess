@@ -1,0 +1,6 @@
+# Les fichiers uploadés ne doivent JAMAIS être exécutés comme du code
+<FilesMatch "\.(php|phar|phtml|php5|pht|htaccess)$">
+    Require all denied
+</FilesMatch>
+Options -ExecCGI
+RemoveHandler .php .phar .phtml .php5

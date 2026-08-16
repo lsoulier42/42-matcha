@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ app_url }}/assets/css/style.css">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="/">{{ app_name }}</a>
+        <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+        <nav class="nav" id="main-nav">
+            {% if current_user %}
+                <a href="/suggestions">Suggestions</a>
+                <a href="/search">Recherche</a>
+                <a href="/messages" class="nav-item">
+                    Messages<span class="badge" data-badge="messages">{{ unread_messages > 0 ? unread_messages : '' }}</span>
+                </a>
+                <a href="/notifications" class="nav-item">
+                    Notifications<span class="badge" data-badge="notifs">{{ unread_notifs > 0 ? unread_notifs : '' }}</span>
+                </a>
+                <a href="/profile">Mon profil</a>
+                <a href="/logout">Déconnexion</a>
+            {% else %}
+                <a href="/auth/login">Connexion</a>
+                <a href="/auth/register">Inscription</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <p>{{ app_name }} — projet École 42</p>
+    </div>
+</footer>
+
+{% if current_user %}
+<script src="{{ app_url }}/assets/js/app.js"></script>
+{% endif %}
+</body>
+</html>

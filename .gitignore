@@ -10,6 +10,13 @@ composer.lock
 # Docker
 /docker-data/
 
+# Cache & logs applicatifs
+/var/
+
+# Photos uploadées par les utilisateurs (jamais dans git)
+/public/assets/uploads/*
+!/public/assets/uploads/.htaccess
+
 # Logs & temp
 *.log
 /tmp/
