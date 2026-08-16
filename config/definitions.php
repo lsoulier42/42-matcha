@@ -13,6 +13,7 @@ use App\Controllers\ProfileController;
 use App\Db\ConnectionFactory;
 use App\Db\Query;
 use App\Services\MailService;
+use App\Services\MatchingService;
 use App\Services\PhotoService;
 use DI\Container;
 use Slim\Views\Twig;
@@ -41,6 +42,10 @@ return [
 
     PhotoService::class => static function (Container $c): PhotoService {
         return new PhotoService($c->get(Query::class), $c->get('settings'));
+    },
+
+    MatchingService::class => static function (Container $c): MatchingService {
+        return new MatchingService($c->get(Query::class), $c->get('settings'));
     },
 
     ProfileController::class => static function (Container $c): ProfileController {

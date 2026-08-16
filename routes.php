@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Controllers\AuthController;
 use App\Controllers\HomeController;
 use App\Controllers\ProfileController;
+use App\Controllers\SearchController;
+use App\Controllers\SuggestController;
 use App\Middleware\AuthMiddleware;
 use Slim\App;
 
@@ -43,6 +45,10 @@ return static function (App $app): void {
         $app->post('/profile/tags/{id}/delete', [ProfileController::class, 'removeTag']);
         $app->get('/profile/visits', [ProfileController::class, 'visits']);
         $app->get('/profile/likes', [ProfileController::class, 'likes']);
+
+        // Suggestions intelligentes + recherche avancée
+        $app->get('/suggestions', [SuggestController::class, 'index']);
+        $app->get('/search', [SearchController::class, 'index']);
 
         // Autocomplétion des tags existants (AJAX)
         $app->get('/api/tags', [ProfileController::class, 'apiTags']);

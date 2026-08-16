@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suggestions — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Profils suggérés</h1>
+
+{% include 'partials/filters.html.twig' with { action: '/suggestions', sort: sort, filters: filters, all_tags: all_tags } %}
+
+{% if profiles|length > 0 %}
+    <div class="user-grid">
+        {% for profile in profiles %}
+            {% include 'partials/user_card.html.twig' with { user: profile } %}
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        Aucun profil ne correspond à vos critères pour le moment.
+        Complétez votre profil (genre, préférences, localisation, tags) pour de meilleures suggestions.
+    </div>
+{% endif %}
+{% endblock %}

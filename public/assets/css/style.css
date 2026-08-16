@@ -415,6 +415,33 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
 .user-info { display: flex; flex-direction: column; gap: 0.1rem; }
 .user-meta { color: var(--c-text-soft); font-size: 0.85rem; }
 .user-date { color: var(--c-text-soft); font-size: 0.78rem; }
+.user-bio { color: var(--c-text-soft); font-size: 0.85rem; font-style: italic; }
+.tags-common { color: var(--c-primary-dark); font-weight: 600; }
+
+/* ---------- Panneau de tri / filtres ---------- */
+.filter-panel {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    margin-bottom: 1.3rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.7rem;
+    align-items: end;
+}
+
+.filter-row .form-field { margin-bottom: 0; }
+
+.filter-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+.filter-panel select[multiple] { min-height: 96px; }
+
+.search-hint { color: var(--c-text-soft); margin: 0 0 1rem; }
 
 /* ---------- Responsive mobile ---------- */
 @media (max-width: 720px) {

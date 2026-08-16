@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recherche avancée — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Recherche avancée</h1>
+
+<p class="search-hint">
+    Combinez un ou plusieurs critères : tranche d'âge, plage de popularité,
+    localisation ou tags d'intérêt.
+</p>
+
+{% include 'partials/filters.html.twig' with { action: '/search', sort: sort, filters: filters, all_tags: all_tags } %}
+
+{% if searched %}
+    <h2>{{ profiles|length }} résultat(s)</h2>
+    {% if profiles|length > 0 %}
+        <div class="user-grid">
+            {% for profile in profiles %}
+                {% include 'partials/user_card.html.twig' with { user: profile } %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">Aucun profil ne correspond à votre recherche.</div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info">Lancez une recherche en remplissant au moins un critère ci-dessus.</div>
+{% endif %}
+{% endblock %}
