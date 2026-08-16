@@ -9,9 +9,11 @@ declare(strict_types=1);
  */
 
 use App\Controllers\AuthController;
+use App\Controllers\ProfileController;
 use App\Db\ConnectionFactory;
 use App\Db\Query;
 use App\Services\MailService;
+use App\Services\PhotoService;
 use DI\Container;
 use Slim\Views\Twig;
 $settings = require __DIR__ . '/settings.php';
@@ -35,6 +37,19 @@ return [
     // Services à configuration scalaire (tableaux) : injection explicite.
     MailService::class => static function (Container $c): MailService {
         return new MailService($c->get('settings')['mail']);
+    },
+
+    PhotoService::class => static function (Container $c): PhotoService {
+        return new PhotoService($c->get(Query::class), $c->get('settings'));
+    },
+
+    ProfileController::class => static function (Container $c): ProfileController {
+        return new ProfileController(
+            $c->get(Twig::class),
+            $c->get(Query::class),
+            $c->get(PhotoService::class),
+            $c->get(App\Services\PopularityService::class)
+        );
     },
 
     AuthController::class => static function (Container $c): AuthController {

@@ -28,6 +28,8 @@ services:
       APP_ENV: ${APP_ENV:-dev}
     volumes:
       - .:/var/www/html
+    # Le dossier d'uploads (bind mount) doit être inscriptible par Apache (www-data).
+    command: sh -c "chown -R www-data:www-data /var/www/html/public/assets/uploads && apache2-foreground"
     depends_on:
       db:
         condition: service_healthy

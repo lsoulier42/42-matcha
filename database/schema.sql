@@ -132,6 +132,21 @@ CREATE TABLE IF NOT EXISTS reports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- Unlikes (retrait d'un like) : entrent dans la formule de popularité
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS unlikes (
+    id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    from_user_id INT UNSIGNED NOT NULL,
+    to_user_id   INT UNSIGNED NOT NULL,
+    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_unlikes_pair (from_user_id, to_user_id),
+    KEY idx_unlikes_to (to_user_id),
+    CONSTRAINT fk_unlikes_from FOREIGN KEY (from_user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_unlikes_to   FOREIGN KEY (to_user_id)   REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- Messages du chat (réservé aux utilisateurs connectés = like mutuel)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS messages (

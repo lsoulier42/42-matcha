@@ -1,0 +1,173 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon profil — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Mon profil</h1>
+
+{% if errors is defined and errors|length > 0 %}
+    <div class="alert alert-error">
+        {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+{% endif %}
+
+<div class="profile-grid">
+    <!-- ============ Identité & préférences ============ -->
+    <section class="form-card profile-card">
+        <h2>Identité et préférences</h2>
+        <form method="post" action="/profile" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="form-field">
+                <label for="prenom">Prénom</label>
+                <input type="text" id="prenom" name="prenom" value="{{ user.prenom }}" maxlength="100" required>
+            </div>
+            <div class="form-field">
+                <label for="nom">Nom de famille</label>
+                <input type="text" id="nom" name="nom" value="{{ user.nom }}" maxlength="100" required>
+            </div>
+            <div class="form-field">
+                <label for="email">Adresse e-mail</label>
+                <input type="email" id="email" name="email" value="{{ user.email }}" maxlength="190" required>
+            </div>
+            <div class="form-field">
+                <label for="birthdate">Date de naissance</label>
+                <input type="date" id="birthdate" name="birthdate" value="{{ user.birthdate ?? '' }}">
+            </div>
+            <div class="form-field">
+                <label for="genre">Genre</label>
+                <select id="genre" name="genre" required>
+                    <option value="" disabled {{ user.genre is empty ? 'selected' : '' }}>Choisir…</option>
+                    <option value="homme" {{ user.genre == 'homme' ? 'selected' : '' }}>Homme</option>
+                    <option value="femme" {{ user.genre == 'femme' ? 'selected' : '' }}>Femme</option>
+                    <option value="autre" {{ user.genre == 'autre' ? 'selected' : '' }}>Autre</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="orientation">Préférences sexuelles</label>
+                <select id="orientation" name="orientation" required>
+                    <option value="" disabled {{ user.orientation is empty ? 'selected' : '' }}>Choisir…</option>
+                    <option value="hetero" {{ user.orientation == 'hetero' ? 'selected' : '' }}>Hétérosexuel(le)</option>
+                    <option value="homo" {{ user.orientation == 'homo' ? 'selected' : '' }}>Homosexuel(le)</option>
+                    <option value="bi" {{ user.orientation == 'bi' ? 'selected' : '' }}>Bisexuel(le)</option>
+                </select>
+                <div class="form-error">Non renseigné = bisexuel par défaut pour les suggestions.</div>
+            </div>
+            <div class="form-field">
+                <label for="bio">Biographie</label>
+                <textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Parlez de vous…">{{ user.bio ?? '' }}</textarea>
+            </div>
+
+            <button class="btn btn-primary" type="submit">Enregistrer</button>
+        </form>
+    </section>
+
+    <!-- ============ Localisation ============ -->
+    <section class="form-card profile-card">
+        <h2>Localisation</h2>
+
+        <p class="localisation-info">
+            {% if user.gps_consent %}
+                📍 Position GPS active{% if user.ville %} — {{ user.ville }}{% endif %}
+            {% elseif user.ville %}
+                📍 {{ user.ville }} (saisie manuelle)
+            {% else %}
+                ⚠️ Localisation requise pour le matching.
+            {% endif %}
+        </p>
+
+        <form method="post" action="/profile/location" id="location-form" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="gps_consent" id="gps_consent" value="0">
+            <input type="hidden" name="lat" id="lat" value="{{ user.lat ?? '' }}">
+            <input type="hidden" name="lng" id="lng" value="{{ user.lng ?? '' }}">
+
+            <div class="form-field">
+                <label for="ville">Ville / quartier</label>
+                <input type="text" id="ville" name="ville" value="{{ user.ville ?? '' }}" maxlength="120"
+                       placeholder="Ex. Lyon 7e" autocomplete="address-level2">
+                <div class="form-error">Obligatoire si le GPS est refusé.</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="btn-gps">📍 Utiliser ma position GPS</button>
+                <button type="submit" class="btn btn-primary">Enregistrer la localisation</button>
+            </div>
+        </form>
+        <p class="form-alt">Votre position n'est utilisée que pour le matching, avec votre consentement explicite (RGPD).</p>
+    </section>
+
+    <!-- ============ Photos ============ -->
+    <section class="form-card profile-card">
+        <h2>Photos <span class="photo-count">{{ photos|length }}/5</span></h2>
+
+        <div class="photo-grid">
+            {% for photo in photos %}
+                <div class="photo-item {{ photo.is_profile ? 'is-profile' : '' }}">
+                    <img src="{{ app_url }}{{ photo.path }}" alt="Photo {{ loop.index }}" loading="lazy">
+                    {% if photo.is_profile %}<span class="photo-tag">Photo de profil</span>{% endif %}
+                    <div class="photo-actions">
+                        {% if not photo.is_profile %}
+                            <form method="post" action="/profile/photo/{{ photo.id }}/profile">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button class="btn btn-ghost btn-sm" type="submit">Définir comme photo de profil</button>
+                            </form>
+                        {% endif %}
+                        <form method="post" action="/profile/photo/{{ photo.id }}/delete"
+                              onsubmit="return confirm('Supprimer cette photo ?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if photos|length < 5 %}
+            <form method="post" action="/profile/photo" enctype="multipart/form-data" class="upload-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="form-field">
+                    <label for="photo">Ajouter une photo (PNG, JPG, GIF, WebP — 5 Mo max)</label>
+                    <input type="file" id="photo" name="photo" accept="image/png,image/jpeg,image/gif,image/webp" required>
+                </div>
+                <button class="btn btn-primary" type="submit">Téléverser</button>
+            </form>
+        {% endif %}
+    </section>
+
+    <!-- ============ Tags ============ -->
+    <section class="form-card profile-card">
+        <h2>Centres d'intérêt</h2>
+
+        <form method="post" action="/profile/tags" class="tag-form" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-field">
+                <label for="tag-input">Ajouter un tag (réutilisable)</label>
+                <input type="text" id="tag-input" name="tag" maxlength="30" placeholder="#vegan, #geek, #piercing…">
+                <div class="tag-suggestions" id="tag-suggestions" hidden></div>
+            </div>
+            <button class="btn btn-primary" type="submit">Ajouter</button>
+        </form>
+
+        <div class="tag-list">
+            {% for tag in tags %}
+                <span class="tag-chip">
+                    #{{ tag.name }}
+                    <form method="post" action="/profile/tags/{{ tag.id }}/delete" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" aria-label="Retirer #{{ tag.name }}" title="Retirer">×</button>
+                    </form>
+                </span>
+            {% else %}
+                <p class="form-alt">Aucun tag pour l'instant.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="form-actions profile-links">
+    <a class="btn btn-ghost" href="/profile/visits">👀 Qui a consulté mon profil</a>
+    <a class="btn btn-ghost" href="/profile/likes">❤️ Qui m'a liké</a>
+    <span class="popularity">Ma popularité : <strong>{{ popularity|number_format(1, ',') }}/10</strong></span>
+</div>
+{% endblock %}

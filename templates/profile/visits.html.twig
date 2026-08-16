@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Qui a consulté mon profil — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Qui a consulté mon profil</h1>
+
+{% if visitors|length > 0 %}
+    <div class="user-grid">
+        {% for visitor in visitors %}
+            <a class="user-card" href="/user/{{ visitor.id }}">
+                <div class="user-avatar">
+                    {% if visitor.avatar %}
+                        <img src="{{ app_url }}{{ visitor.avatar }}" alt="{{ visitor.prenom }}">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ visitor.prenom|first|upper }}</div>
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <strong>{{ visitor.prenom }} ({{ visitor.age ?? '?' }})</strong>
+                    <span class="user-meta">{{ visitor.ville ?? 'Localisation inconnue' }}</span>
+                    <span class="user-meta">⭐ {{ visitor.popularity_display }}/10</span>
+                </div>
+                <time class="user-date">{{ visitor.viewed_at|date('d/m/Y H:i') }}</time>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">Personne n'a encore consulté votre profil.</div>
+{% endif %}
+{% endblock %}

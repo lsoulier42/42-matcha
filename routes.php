@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Controllers\AuthController;
 use App\Controllers\HomeController;
+use App\Controllers\ProfileController;
+use App\Middleware\AuthMiddleware;
 use Slim\App;
 
 /*
@@ -28,4 +30,21 @@ return static function (App $app): void {
 
     // Déconnexion : POST protégé CSRF, « en un clic » depuis le layout.
     $app->post('/logout', [AuthController::class, 'logout']);
+
+    // ---------- Privé (session requise) ----------
+    $app->group('', function ($app): void {
+        $app->get('/profile', [ProfileController::class, 'show']);
+        $app->post('/profile', [ProfileController::class, 'update']);
+        $app->post('/profile/location', [ProfileController::class, 'updateLocation']);
+        $app->post('/profile/photo', [ProfileController::class, 'uploadPhoto']);
+        $app->post('/profile/photo/{id}/profile', [ProfileController::class, 'setProfilePhoto']);
+        $app->post('/profile/photo/{id}/delete', [ProfileController::class, 'deletePhoto']);
+        $app->post('/profile/tags', [ProfileController::class, 'addTag']);
+        $app->post('/profile/tags/{id}/delete', [ProfileController::class, 'removeTag']);
+        $app->get('/profile/visits', [ProfileController::class, 'visits']);
+        $app->get('/profile/likes', [ProfileController::class, 'likes']);
+
+        // Autocomplétion des tags existants (AJAX)
+        $app->get('/api/tags', [ProfileController::class, 'apiTags']);
+    })->add(AuthMiddleware::class);
 };
