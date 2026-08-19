@@ -19,6 +19,7 @@ use App\Repository\TagRepository;
 use App\Repository\TokenRepository;
 use App\Repository\UserRepository;
 use App\Repository\VisitRepository;
+use App\Security\AuthService;
 use App\Services\MailService;
 use App\Services\MatchingService;
 use App\Services\PhotoService;
@@ -79,14 +80,21 @@ return [
         );
     },
 
+    AuthService::class => static function (Container $c): AuthService {
+        return new AuthService(
+            $c->get(UserRepository::class),
+            $c->get(TokenRepository::class),
+            $c->get(MailService::class),
+            $c->get('settings')['app']['url'],
+        );
+    },
+
     AuthController::class => static function (Container $c): AuthController {
         return new AuthController(
             $c->get(Twig::class),
             $c->get(UserRepository::class),
-            $c->get(TokenRepository::class),
-            $c->get(MailService::class),
+            $c->get(AuthService::class),
             $c->get(RegisterValidator::class),
-            $c->get('settings')['app']['url']
         );
     },
 ];
