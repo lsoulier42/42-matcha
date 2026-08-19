@@ -28,7 +28,7 @@ final class MapController
 
     public function index(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
 
         $profiles = $this->matching->suggest($userId, [], 'score');
         $ids = array_map(static fn (ProfileCard $card): int => $card->id, $profiles);

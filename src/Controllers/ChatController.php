@@ -7,7 +7,8 @@ namespace App\Controllers;
 use App\Entity\Message;
 use App\Services\MessageService;
 use App\Support\Flash;
-use Psr\Http\Message\ResponseInterface as Response;
+use App\Support\Http;
+use Psr\Http\Message\ResponseInterface as ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
@@ -25,18 +26,18 @@ final class ChatController
     }
 
     /** Conversation list (active matches). */
-    public function index(Request $request, Response $response): Response
+    public function index(Request $request, ResponseInterface $response): ResponseInterface
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         return $this->twig->render($response, 'messages/index.html.twig', [
             'conversations' => $this->messages->conversations($userId),
         ]);
     }
 
     /** Thread view with a match. */
-    public function show(Request $request, Response $response, array $args): Response
+    public function show(Request $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $otherId = (int) ($args['id'] ?? 0);
 
         if ($otherId === $userId || !$this->messages->canChat($userId, $otherId)) {
@@ -56,48 +57,53 @@ final class ChatController
         ]);
     }
 
-    /** Send a message (classic form or AJAX). */
-    public function send(Request $request, Response $response, array $args): Response
+    /** Send a message (classic form submission → flash + redirect). */
+    public function send(Request $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $otherId = (int) ($args['id'] ?? 0);
         $data = (array) $request->getParsedBody();
         $content = trim((string) ($data['content'] ?? ''));
 
         $id = $this->messages->send($userId, $otherId, $content);
 
-        $accept = $request->getHeaderLine('Accept');
-        if (str_contains($accept, 'application/json')) {
-            $response->getBody()->write(json_encode([
-                'ok' => $id !== null,
-                'message_id' => $id,
-                'error' => $id === null ? 'Message refusé (match requis, aucun blocage, contenu valide).' : null,
-            ], JSON_UNESCAPED_UNICODE));
-            return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
-        }
-
         if ($id === null) {
             Flash::set('error', 'Message non envoyé : la conversation n\'est plus active.');
         }
-        return $response->withHeader('Location', '/messages/' . $otherId)->withStatus(302);
+        return Http::redirect($response, '/messages/' . $otherId);
+    }
+
+    /** AJAX: send a message (returns JSON). */
+    public function apiSend(Request $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $userId = $request->getAttribute('user_id');
+        $otherId = (int) ($args['id'] ?? 0);
+        $data = (array) $request->getParsedBody();
+        $content = trim((string) ($data['content'] ?? ''));
+
+        $id = $this->messages->send($userId, $otherId, $content);
+
+        return Http::json($response, [
+            'ok' => $id !== null,
+            'message_id' => $id,
+            'error' => $id === null ? 'Message refusé (match requis, aucun blocage, contenu valide).' : null,
+        ]);
     }
 
     /** AJAX polling: new messages since id $after (chat open). */
-    public function apiHistory(Request $request, Response $response, array $args): Response
+    public function apiHistory(Request $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $otherId = (int) ($args['id'] ?? 0);
         $after = isset($request->getQueryParams()['after']) ? (int) $request->getQueryParams()['after'] : 0;
 
         if (!$this->messages->canChat($userId, $otherId)) {
-            $response->getBody()->write(json_encode(['ok' => false, 'error' => 'conversation_indisponible']));
-            return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+            return Http::json($response, ['ok' => false, 'error' => 'conversation_indisponible']);
         }
 
         $history = $this->messages->history($userId, $otherId, $after > 0 ? $after : null);
         $payload = array_map(static fn (Message $message): array => $message->toApiArray(), $history);
 
-        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
-        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+        return Http::json($response, $payload);
     }
 }

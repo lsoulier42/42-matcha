@@ -8,6 +8,7 @@ use App\Dto\AppointmentData;
 use App\Repository\AppointmentRepository;
 use App\Services\MessageService;
 use App\Support\Flash;
+use App\Support\Http;
 use App\Validation\AppointmentValidator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -29,7 +30,7 @@ final class AppointmentController
 
     public function index(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
 
         return $this->twig->render($response, 'appointments/index.html.twig', [
             'appointments' => $this->appointments->listFor($userId),
@@ -39,26 +40,26 @@ final class AppointmentController
 
     public function create(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $data = AppointmentData::fromRequest((array) $request->getParsedBody());
 
         $errors = $this->validator->validate($this->messages, $data, $userId);
         if ($errors !== []) {
             Flash::set('error', 'Rendez-vous non créé : ' . implode(' ', $errors));
-            return $response->withHeader('Location', '/appointments')->withStatus(302);
+            return Http::redirect($response, '/appointments');
         }
 
         $this->appointments->create($data->toRecord($userId));
 
         Flash::set('success', 'Rendez-vous planifié !');
-        return $response->withHeader('Location', '/appointments')->withStatus(302);
+        return Http::redirect($response, '/appointments');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $this->appointments->delete((int) ($args['id'] ?? 0), $userId);
         Flash::set('success', 'Rendez-vous supprimé.');
-        return $response->withHeader('Location', '/appointments')->withStatus(302);
+        return Http::redirect($response, '/appointments');
     }
 }

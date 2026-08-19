@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Services\MessageService;
 use App\Services\NotificationService;
+use App\Support\Http;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -24,7 +25,7 @@ final class ApiController
 
     public function poll(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
 
         $payload = [
             'unread_messages' => $this->messages->unreadCount($userId),
@@ -32,8 +33,6 @@ final class ApiController
             'server_time' => time(),
         ];
 
-        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
-        return $response->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withHeader('Cache-Control', 'no-store');
+        return Http::json($response, $payload)->withHeader('Cache-Control', 'no-store');
     }
 }

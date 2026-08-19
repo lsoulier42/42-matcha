@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Support\Http;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
@@ -23,13 +24,12 @@ final class AuthMiddleware implements MiddlewareInterface
         if ($userId === null) {
             $path = $request->getUri()->getPath();
             if (str_starts_with($path, '/api')) {
-                $response = new SlimResponse(401);
-                $response->getBody()->write(json_encode(['error' => 'non_authentifie'], JSON_UNESCAPED_UNICODE));
-                return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+                return Http::json(new SlimResponse(401), ['error' => 'non_authentifie'], 401);
             }
             return (new SlimResponse(302))->withHeader('Location', '/auth/login');
         }
 
+        $request = $request->withAttribute('user_id', (int) $userId);
         return $handler->handle($request);
     }
 }

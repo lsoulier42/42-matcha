@@ -15,6 +15,7 @@ use App\Repository\VisitRepository;
 use App\Services\PhotoService;
 use App\Services\PopularityService;
 use App\Support\Flash;
+use App\Support\Http;
 use App\Validation\LocationValidator;
 use App\Validation\ProfileValidator;
 use App\Validation\TagValidator;
@@ -51,7 +52,7 @@ final class ProfileController
 
     public function show(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $user = $this->users->findById($userId);
 
         return $this->twig->render($response, 'profile/show.html.twig', $this->profileViewData($user));
@@ -59,7 +60,7 @@ final class ProfileController
 
     public function update(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $user = $this->users->findById($userId);
         $data = ProfileUpdateData::fromRequest((array) $request->getParsedBody());
 
@@ -73,7 +74,7 @@ final class ProfileController
 
         $this->refreshSession($userId);
         Flash::set('success', 'Profil mis à jour.');
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     // -------------------------------------------------------------
@@ -82,20 +83,20 @@ final class ProfileController
 
     public function updateLocation(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $data = LocationUpdateData::fromRequest((array) $request->getParsedBody());
 
         $errors = $this->locationValidator->validate($data);
         if ($errors !== []) {
             Flash::set('error', 'Localisation invalide.');
-            return $response->withHeader('Location', '/profile')->withStatus(302);
+            return Http::redirect($response, '/profile');
         }
 
         $this->users->update($userId, $data->toRecord());
 
         $this->refreshSession($userId);
         Flash::set('success', $data->gpsConsent ? 'Position GPS enregistrée.' : 'Localisation manuelle enregistrée.');
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     // -------------------------------------------------------------
@@ -104,7 +105,7 @@ final class ProfileController
 
     public function uploadPhoto(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $files = $request->getUploadedFiles();
         $errors = $this->photos->upload($userId, $files['photo'] ?? null);
 
@@ -114,24 +115,24 @@ final class ProfileController
             Flash::set('success', 'Photo ajoutée.');
         }
         $this->refreshSession($userId);
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     public function setProfilePhoto(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $this->photos->setProfile($userId, (int) ($args['id'] ?? 0));
         $this->refreshSession($userId);
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     public function deletePhoto(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $this->photos->delete($userId, (int) ($args['id'] ?? 0));
         $this->refreshSession($userId);
         Flash::set('success', 'Photo supprimée.');
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     // -------------------------------------------------------------
@@ -140,27 +141,27 @@ final class ProfileController
 
     public function rotatePhoto(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $degrees = (int) (($request->getParsedBody() ?? [])['degrees'] ?? 90);
         $ok = $this->photos->rotate($userId, (int) ($args['id'] ?? 0), $degrees);
         Flash::set($ok ? 'success' : 'error', $ok ? 'Photo pivotée.' : 'Rotation impossible sur cette photo.');
         $this->refreshSession($userId);
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     public function filterPhoto(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $filter = (string) (($request->getParsedBody() ?? [])['filter'] ?? '');
         $ok = $this->photos->applyFilter($userId, (int) ($args['id'] ?? 0), $filter);
         Flash::set($ok ? 'success' : 'error', $ok ? 'Filtre appliqué.' : 'Filtre inconnu.');
         $this->refreshSession($userId);
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     public function cropPhoto(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $data = (array) $request->getParsedBody();
         $ok = $this->photos->crop(
             $userId,
@@ -172,7 +173,7 @@ final class ProfileController
         );
         Flash::set($ok ? 'success' : 'error', $ok ? 'Photo recadrée.' : 'Recadrage impossible.');
         $this->refreshSession($userId);
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     // -------------------------------------------------------------
@@ -181,13 +182,13 @@ final class ProfileController
 
     public function addTag(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $data = TagData::fromRequest((array) $request->getParsedBody());
 
         $errors = $this->tagValidator->validate($this->tags, $data->name, $userId);
         if ($errors !== []) {
             Flash::set('error', reset($errors));
-            return $response->withHeader('Location', '/profile')->withStatus(302);
+            return Http::redirect($response, '/profile');
         }
 
         // Reusable tags: reuse existing or create new.
@@ -198,14 +199,14 @@ final class ProfileController
         $this->tags->attach($userId, $tagId);
 
         Flash::set('success', 'Tag « #' . $data->name . ' » ajouté.');
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     public function removeTag(Request $request, Response $response, array $args): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $this->tags->detach($userId, (int) ($args['id'] ?? 0));
-        return $response->withHeader('Location', '/profile')->withStatus(302);
+        return Http::redirect($response, '/profile');
     }
 
     /** Autocomplete existing tags (AJAX, JSON). */
@@ -214,8 +215,7 @@ final class ProfileController
         $q = mb_strtolower(trim((string) $request->getQueryParams()['q'] ?? ''));
         $q = substr($q, 0, 30);
 
-        $response->getBody()->write(json_encode($this->tags->search($q), JSON_UNESCAPED_UNICODE));
-        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
+        return Http::json($response, $this->tags->search($q));
     }
 
     // -------------------------------------------------------------
@@ -224,7 +224,7 @@ final class ProfileController
 
     public function visits(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         return $this->twig->render($response, 'profile/visits.html.twig', [
             'visitors' => $this->visits->listVisitors($userId),
         ]);
@@ -232,7 +232,7 @@ final class ProfileController
 
     public function likes(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         return $this->twig->render($response, 'profile/likes.html.twig', [
             'likers' => $this->likes->listLikers($userId),
         ]);

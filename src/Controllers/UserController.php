@@ -14,6 +14,7 @@ use App\Repository\VisitRepository;
 use App\Services\NotificationService;
 use App\Services\PopularityService;
 use App\Support\Flash;
+use App\Support\Http;
 use App\ViewModel\UserProfile;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -43,11 +44,11 @@ final class UserController
 
     public function show(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
 
         if ($id === $me) {
-            return $response->withHeader('Location', '/profile')->withStatus(302);
+            return Http::redirect($response, '/profile');
         }
 
         $user = $this->users->findActiveById($id);
@@ -87,23 +88,23 @@ final class UserController
 
     public function like(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
 
         if ($id === $me) {
-            return $this->redirect($response, $back);
+            return Http::redirect($response, $back);
         }
         if ($this->blocks->isBlocked($me, $id)) {
             Flash::set('error', 'Action impossible sur ce profil.');
-            return $this->redirect($response, $back);
+            return Http::redirect($response, $back);
         }
 
         // Spec requirement: without a profile photo, the like is rejected
         // SERVER-SIDE (not merely hidden in the UI).
         if (!$this->photos->hasProfilePhoto($me)) {
             Flash::set('error', 'Vous devez avoir une photo de profil pour liker un autre profil.');
-            return $this->redirect($response, $back);
+            return Http::redirect($response, $back);
         }
 
         if (!$this->likes->exists($me, $id)) {
@@ -124,12 +125,12 @@ final class UserController
             Flash::set('info', 'Vous avez déjà liké ce profil.');
         }
 
-        return $this->redirect($response, $back);
+        return Http::redirect($response, $back);
     }
 
     public function unlike(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
 
@@ -145,7 +146,7 @@ final class UserController
             Flash::set('success', 'Like retiré.');
         }
 
-        return $this->redirect($response, $back);
+        return Http::redirect($response, $back);
     }
 
     // -------------------------------------------------------------
@@ -154,7 +155,7 @@ final class UserController
 
     public function block(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
 
@@ -165,12 +166,12 @@ final class UserController
             Flash::set('success', 'Utilisateur bloqué. Il n\'apparaît plus dans vos recherches.');
         }
 
-        return $this->redirect($response, $back);
+        return Http::redirect($response, $back);
     }
 
     public function unblock(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
 
@@ -179,12 +180,12 @@ final class UserController
             Flash::set('success', 'Utilisateur débloqué.');
         }
 
-        return $this->redirect($response, $back);
+        return Http::redirect($response, $back);
     }
 
     public function report(Request $request, Response $response, array $args): Response
     {
-        $me = (int) $_SESSION['user_id'];
+        $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
 
@@ -198,7 +199,7 @@ final class UserController
             }
         }
 
-        return $this->redirect($response, $back);
+        return Http::redirect($response, $back);
     }
 
     // -------------------------------------------------------------
@@ -220,10 +221,5 @@ final class UserController
     {
         $uri = $request->getUri();
         return $uri->getScheme() . '://' . $uri->getHost() . ($uri->getPort() !== null ? ':' . $uri->getPort() : '');
-    }
-
-    private function redirect(Response $response, string $url): Response
-    {
-        return $response->withHeader('Location', $url)->withStatus(302);
     }
 }

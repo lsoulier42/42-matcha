@@ -27,7 +27,7 @@ final class SuggestController
 
     public function index(Request $request, Response $response): Response
     {
-        $userId = (int) $_SESSION['user_id'];
+        $userId = $request->getAttribute('user_id');
         $params = $request->getQueryParams();
 
         $sort = (string) ($params['sort'] ?? 'score');

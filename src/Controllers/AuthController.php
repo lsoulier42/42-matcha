@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Dto\RegisterData;
 use App\Security\AuthService;
 use App\Support\Flash;
+use App\Support\Http;
 use App\Validation\RegisterValidator;
 use App\Repository\UserRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -38,7 +39,7 @@ final class AuthController
     public function showRegister(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
         return $this->twig->render($response, 'auth/register.html.twig');
     }
@@ -46,7 +47,7 @@ final class AuthController
     public function register(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
 
         $raw = (array) $request->getParsedBody();
@@ -68,7 +69,7 @@ final class AuthController
             Flash::set('error', $result['error']);
         }
 
-        return $response->withHeader('Location', '/auth/login')->withStatus(302);
+        return Http::redirect($response, '/auth/login');
     }
 
     // -------------------------------------------------------------
@@ -93,7 +94,7 @@ final class AuthController
     public function showLogin(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
         return $this->twig->render($response, 'auth/login.html.twig');
     }
@@ -101,7 +102,7 @@ final class AuthController
     public function login(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
 
         $data = (array) $request->getParsedBody();
@@ -120,13 +121,13 @@ final class AuthController
         $this->auth->startSession($result['user']);
 
         Flash::set('success', 'Bonjour ' . $result['user']->prenom . ' !');
-        return $this->redirectToSuggestions($response);
+        return Http::redirect($response, '/suggestions');
     }
 
     public function logout(Request $request, Response $response): Response
     {
         $this->auth->destroySession();
-        return $response->withHeader('Location', '/')->withStatus(302);
+        return Http::redirect($response, '/');
     }
 
     // -------------------------------------------------------------
@@ -136,7 +137,7 @@ final class AuthController
     public function showForgot(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
         return $this->twig->render($response, 'auth/forgot.html.twig');
     }
@@ -144,7 +145,7 @@ final class AuthController
     public function forgot(Request $request, Response $response): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
 
         $data = (array) $request->getParsedBody();
@@ -156,13 +157,13 @@ final class AuthController
 
         // Always the same message: no user enumeration.
         Flash::set('success', 'Si un compte existe avec cette adresse e-mail, un lien de réinitialisation vient d\'être envoyé.');
-        return $response->withHeader('Location', '/auth/forgot')->withStatus(302);
+        return Http::redirect($response, '/auth/forgot');
     }
 
     public function showReset(Request $request, Response $response, array $args): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
         $token = (string) ($args['token'] ?? '');
         return $this->twig->render($response, 'auth/reset.html.twig', [
@@ -174,7 +175,7 @@ final class AuthController
     public function reset(Request $request, Response $response, array $args): Response
     {
         if ($this->auth->isLoggedIn()) {
-            return $this->redirectToSuggestions($response);
+            return Http::redirect($response, '/suggestions');
         }
 
         $token = (string) ($args['token'] ?? '');
@@ -186,7 +187,7 @@ final class AuthController
 
         if ($result['ok']) {
             Flash::set('success', 'Mot de passe réinitialisé, vous pouvez vous connecter.');
-            return $response->withHeader('Location', '/auth/login')->withStatus(302);
+            return Http::redirect($response, '/auth/login');
         }
 
         return $this->twig->render($response, 'auth/reset.html.twig', [
@@ -199,11 +200,6 @@ final class AuthController
     // -------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------
-
-    private function redirectToSuggestions(Response $response): Response
-    {
-        return $response->withHeader('Location', '/suggestions')->withStatus(302);
-    }
 
     /** Never re-populate the password fields in the form. */
     private function cleanOld(array $data): array

@@ -84,6 +84,7 @@ return static function (App $app): void {
         // AJAX polling: global badges + open chat thread
         $app->get('/api/poll', [ApiController::class, 'poll']);
         $app->get('/api/messages/{id}', [ChatController::class, 'apiHistory']);
+        $app->post('/api/messages/{id}', [ChatController::class, 'apiSend']);
 
         // Existing tag autocomplete (AJAX)
         $app->get('/api/tags', [ProfileController::class, 'apiTags']);
