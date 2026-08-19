@@ -25,6 +25,7 @@ use App\Services\PhotoService;
 use App\Validation\LocationValidator;
 use App\Validation\ProfileValidator;
 use App\Validation\RegisterValidator;
+use App\Validation\TagValidator;
 use DI\Container;
 use Slim\Views\Twig;
 $settings = require __DIR__ . '/settings.php';
@@ -73,7 +74,8 @@ return [
             $c->get(PhotoService::class),
             $c->get(App\Services\PopularityService::class),
             $c->get(ProfileValidator::class),
-            $c->get(LocationValidator::class)
+            $c->get(LocationValidator::class),
+            $c->get(TagValidator::class)
         );
     },
 

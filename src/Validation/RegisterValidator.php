@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validation;
 
+use App\Dto\RegisterData;
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
 
@@ -16,23 +17,23 @@ use App\Security\PasswordPolicy;
  */
 final class RegisterValidator
 {
-    public function validate(UserRepository $users, array $data): array
+    public function validate(UserRepository $users, RegisterData $data): array
     {
-        $email = mb_strtolower(trim((string) ($data['email'] ?? '')));
-        $username = trim((string) ($data['username'] ?? ''));
-        $password = (string) ($data['password'] ?? '');
+        $email = $data->email;
+        $username = $data->username;
+        $password = $data->password;
 
         $v = new Validator();
         $v->required('email', $email, 'adresse e-mail')
             ->email('email', $email, 'Adresse e-mail')
             ->required('username', $username, 'nom d\'utilisateur')
             ->username('username', $username)
-            ->required('nom', $data['nom'] ?? null, 'nom de famille')
-            ->name('nom', $data['nom'] ?? null, 'Nom de famille')
-            ->required('prenom', $data['prenom'] ?? null, 'prénom')
-            ->name('prenom', $data['prenom'] ?? null, 'Prénom')
+            ->required('nom', $data->nom, 'nom de famille')
+            ->name('nom', $data->nom, 'Nom de famille')
+            ->required('prenom', $data->prenom, 'prénom')
+            ->name('prenom', $data->prenom, 'Prénom')
             ->required('password', $password, 'mot de passe')
-            ->equals('password_confirm', $data['password_confirm'] ?? null, $password, 'Les deux mots de passe ne correspondent pas.');
+            ->equals('password_confirm', $data->passwordConfirm, $password, 'Les deux mots de passe ne correspondent pas.');
 
         foreach (PasswordPolicy::check($password) as $error) {
             $v->add('password', $error);

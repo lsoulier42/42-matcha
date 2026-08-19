@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validation;
 
+use App\Dto\AppointmentData;
 use App\Services\MessageService;
 
 /**
@@ -14,13 +15,14 @@ use App\Services\MessageService;
  */
 final class AppointmentValidator
 {
-    public function validate(MessageService $messages, array $data, int $userId): array
+    public function validate(MessageService $messages, AppointmentData $data, int $userId): array
     {
-        $title = trim((string) ($data['title'] ?? ''));
-        $description = trim((string) ($data['description'] ?? ''));
-        $location = trim((string) ($data['location'] ?? ''));
-        $startAt = trim((string) ($data['start_at'] ?? '')); // datetime-local : Y-m-d\TH:i
-        $otherId = (int) ($data['user_id'] ?? 0);
+        $title = $data->title;
+        $description = $data->description;
+        $location = $data->location;
+        $startAtRaw = $data->startAtRaw;
+        $startAt = $data->startAt;
+        $otherId = $data->userId;
 
         $v = new Validator();
         $v->required('title', $title, 'titre')
@@ -32,15 +34,12 @@ final class AppointmentValidator
             $v->add('user_id', 'Choisissez un utilisateur connecté (like mutuel).');
         }
 
-        if ($startAt === '') {
+        if ($startAtRaw === '') {
             $v->add('start_at', 'La date et l\'heure du rendez-vous sont obligatoires.');
-        } else {
-            $start = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $startAt);
-            if ($start === false) {
-                $v->add('start_at', 'Date invalide.');
-            } elseif ($start < new \DateTimeImmutable('now')) {
-                $v->add('start_at', 'Le rendez-vous doit être dans le futur.');
-            }
+        } elseif ($startAt === null) {
+            $v->add('start_at', 'Date invalide.');
+        } elseif ($startAt < new \DateTimeImmutable('now')) {
+            $v->add('start_at', 'Le rendez-vous doit être dans le futur.');
         }
 
         return $v->errors();

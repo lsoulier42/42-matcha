@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validation;
 
+use App\Dto\ProfileUpdateData;
 use App\Repository\UserRepository;
 
 /**
@@ -17,13 +18,13 @@ final class ProfileValidator
     private const GENRES = ['homme', 'femme', 'autre'];
     private const ORIENTATIONS = ['hetero', 'homo', 'bi'];
 
-    public function validate(UserRepository $users, array $data, int $userId): array
+    public function validate(UserRepository $users, ProfileUpdateData $data, int $userId): array
     {
-        $email = mb_strtolower(trim((string) ($data['email'] ?? '')));
-        $genre = (string) ($data['genre'] ?? '');
-        $orientation = (string) ($data['orientation'] ?? '');
-        $bio = trim((string) ($data['bio'] ?? ''));
-        $birthdate = (string) ($data['birthdate'] ?? '');
+        $email = $data->email;
+        $genre = $data->genre;
+        $orientation = $data->orientation;
+        $bio = $data->bio;
+        $birthdate = $data->birthdate;
 
         $v = new Validator();
         $v->required('email', $email, 'adresse e-mail')
@@ -35,7 +36,7 @@ final class ProfileValidator
         if (!in_array($genre, self::GENRES, true)) {
             $v->add('genre', 'Genre invalide.');
         }
-        if (!in_array($orientation, self::ORIENTATIONS, true)) {
+        if ($orientation === null || !in_array($orientation, self::ORIENTATIONS, true)) {
             $v->add('orientation', 'Préférences invalides.');
         }
 
@@ -43,7 +44,7 @@ final class ProfileValidator
             $v->add('email', 'Cette adresse e-mail est déjà utilisée.');
         }
 
-        if ($birthdate !== '') {
+        if ($birthdate !== null) {
             $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $birthdate);
             if ($dt === false) {
                 $v->add('birthdate', 'Date de naissance invalide.');

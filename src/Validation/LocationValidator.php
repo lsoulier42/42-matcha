@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Validation;
 
+use App\Dto\LocationUpdateData;
+
 /**
  * Règles de localisation : consentement GPS explicite avec coordonnées
  * valides, OU saisie manuelle obligatoire de la ville/quartier (exigence
@@ -13,12 +15,12 @@ namespace App\Validation;
  */
 final class LocationValidator
 {
-    public function validate(array $data): array
+    public function validate(LocationUpdateData $data): array
     {
-        $gpsConsent = (int) ($data['gps_consent'] ?? 0) === 1;
-        $ville = trim((string) ($data['ville'] ?? ''));
-        $lat = isset($data['lat']) && $data['lat'] !== '' ? (float) $data['lat'] : null;
-        $lng = isset($data['lng']) && $data['lng'] !== '' ? (float) $data['lng'] : null;
+        $gpsConsent = $data->gpsConsent;
+        $ville = $data->ville ?? '';
+        $lat = $data->lat;
+        $lng = $data->lng;
 
         $v = new Validator();
         $v->length('ville', $ville, 2, 120, 'Ville / quartier');
@@ -35,3 +37,4 @@ final class LocationValidator
         return $v->errors();
     }
 }
+

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Dto\RegisterData;
 use App\Repository\TokenRepository;
 use App\Repository\UserRepository;
 use App\Services\MailService;
@@ -49,30 +50,25 @@ final class AuthController
             return $this->redirectToSuggestions($response);
         }
 
-        $data = (array) $request->getParsedBody();
+        $raw = (array) $request->getParsedBody();
+        $data = RegisterData::fromRequest($raw);
         $errors = $this->registerValidator->validate($this->users, $data);
 
         if ($errors !== []) {
             return $this->twig->render($response, 'auth/register.html.twig', [
                 'errors' => $errors,
-                'old' => $this->cleanOld($data),
+                'old' => $this->cleanOld($raw),
             ]);
         }
 
-        $userId = $this->users->create([
-            'email' => mb_strtolower(trim((string) ($data['email'] ?? ''))),
-            'username' => trim((string) ($data['username'] ?? '')),
-            'nom' => trim((string) ($data['nom'] ?? '')),
-            'prenom' => trim((string) ($data['prenom'] ?? '')),
-            'password_hash' => password_hash((string) ($data['password'] ?? ''), PASSWORD_DEFAULT),
-        ]);
+        $userId = $this->users->create($data->toRecord());
         $token = $this->createToken($userId, 'verify_email');
 
         $link = $this->appUrl . '/auth/verify/' . $token;
-        if (!$this->mail->sendVerification(mb_strtolower(trim((string) ($data['email'] ?? ''))), trim((string) ($data['username'] ?? '')), $link)) {
+        if (!$this->mail->sendVerification($data->email, $data->username, $link)) {
             Flash::set('error', 'L\'e-mail de vérification n\'a pas pu être envoyé, réessayez dans un instant.');
         } else {
-            Flash::set('success', 'Compte créé ! Un e-mail de vérification a été envoyé à ' . mb_strtolower(trim((string) ($data['email'] ?? ''))) . '.');
+            Flash::set('success', 'Compte créé ! Un e-mail de vérification a été envoyé à ' . $data->email . '.');
         }
         return $response->withHeader('Location', '/auth/login')->withStatus(302);
     }

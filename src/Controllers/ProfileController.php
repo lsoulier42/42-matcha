@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Dto\LocationUpdateData;
+use App\Dto\ProfileUpdateData;
+use App\Dto\TagData;
 use App\Entity\User;
 use App\Repository\LikeRepository;
 use App\Repository\TagRepository;
@@ -14,6 +17,7 @@ use App\Services\PopularityService;
 use App\Support\Flash;
 use App\Validation\LocationValidator;
 use App\Validation\ProfileValidator;
+use App\Validation\TagValidator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
@@ -36,7 +40,8 @@ final class ProfileController
         private PhotoService $photos,
         private PopularityService $popularity,
         private ProfileValidator $profileValidator,
-        private LocationValidator $locationValidator
+        private LocationValidator $locationValidator,
+        private TagValidator $tagValidator
     ) {
     }
 
@@ -56,7 +61,7 @@ final class ProfileController
     {
         $userId = (int) $_SESSION['user_id'];
         $user = $this->users->findById($userId);
-        $data = (array) $request->getParsedBody();
+        $data = ProfileUpdateData::fromRequest((array) $request->getParsedBody());
 
         $errors = $this->profileValidator->validate($this->users, $data, $userId);
         if ($errors !== []) {
@@ -64,15 +69,7 @@ final class ProfileController
             return $this->twig->render($response, 'profile/show.html.twig', $this->profileViewData($user, $errors));
         }
 
-        $bio = trim((string) ($data['bio'] ?? ''));
-        $birthdate = (string) ($data['birthdate'] ?? '');
-        $this->users->update($userId, [
-            'email' => mb_strtolower(trim((string) ($data['email'] ?? ''))),
-            'genre' => (string) ($data['genre'] ?? ''),
-            'orientation' => (string) ($data['orientation'] ?? '') === '' ? null : (string) ($data['orientation'] ?? ''),
-            'bio' => $bio === '' ? null : $bio,
-            'birthdate' => $birthdate === '' ? null : $birthdate,
-        ]);
+        $this->users->update($userId, $data->toRecord());
 
         $this->refreshSession($userId);
         Flash::set('success', 'Profil mis à jour.');
@@ -86,7 +83,7 @@ final class ProfileController
     public function updateLocation(Request $request, Response $response): Response
     {
         $userId = (int) $_SESSION['user_id'];
-        $data = (array) $request->getParsedBody();
+        $data = LocationUpdateData::fromRequest((array) $request->getParsedBody());
 
         $errors = $this->locationValidator->validate($data);
         if ($errors !== []) {
@@ -94,20 +91,10 @@ final class ProfileController
             return $response->withHeader('Location', '/profile')->withStatus(302);
         }
 
-        $gpsConsent = (int) ($data['gps_consent'] ?? 0) === 1;
-        $ville = trim((string) ($data['ville'] ?? ''));
-        $lat = isset($data['lat']) && $data['lat'] !== '' ? (float) $data['lat'] : null;
-        $lng = isset($data['lng']) && $data['lng'] !== '' ? (float) $data['lng'] : null;
-
-        $this->users->update($userId, [
-            'ville' => $ville === '' ? null : $ville,
-            'lat' => $lat,
-            'lng' => $lng,
-            'gps_consent' => $gpsConsent ? 1 : 0,
-        ]);
+        $this->users->update($userId, $data->toRecord());
 
         $this->refreshSession($userId);
-        Flash::set('success', $gpsConsent ? 'Position GPS enregistrée.' : 'Localisation manuelle enregistrée.');
+        Flash::set('success', $data->gpsConsent ? 'Position GPS enregistrée.' : 'Localisation manuelle enregistrée.');
         return $response->withHeader('Location', '/profile')->withStatus(302);
     }
 
@@ -195,31 +182,22 @@ final class ProfileController
     public function addTag(Request $request, Response $response): Response
     {
         $userId = (int) $_SESSION['user_id'];
-        $data = (array) $request->getParsedBody();
+        $data = TagData::fromRequest((array) $request->getParsedBody());
 
-        // Normalisation : minuscules, sans « # », espaces → tirets.
-        $name = mb_strtolower(trim((string) ($data['tag'] ?? '')));
-        $name = str_replace('#', '', $name);
-        $name = preg_replace('/\s+/', '-', $name) ?? '';
-
-        if (preg_match('/^[a-z0-9_-]{1,30}$/', $name) !== 1) {
-            Flash::set('error', 'Tag invalide (1 à 30 caractères : lettres, chiffres, _ et -).');
-            return $response->withHeader('Location', '/profile')->withStatus(302);
-        }
-
-        if ($this->tags->countForUser($userId) >= 20) {
-            Flash::set('error', 'Nombre maximal de tags atteint (20).');
+        $errors = $this->tagValidator->validate($this->tags, $data->name, $userId);
+        if ($errors !== []) {
+            Flash::set('error', reset($errors));
             return $response->withHeader('Location', '/profile')->withStatus(302);
         }
 
         // Tags réutilisables : on récupère l'existant ou on le crée.
-        $tagId = $this->tags->findIdByName($name);
+        $tagId = $this->tags->findIdByName($data->name);
         if ($tagId === null) {
-            $tagId = $this->tags->create($name);
+            $tagId = $this->tags->create($data->name);
         }
         $this->tags->attach($userId, $tagId);
 
-        Flash::set('success', 'Tag « #' . $name . ' » ajouté.');
+        Flash::set('success', 'Tag « #' . $data->name . ' » ajouté.');
         return $response->withHeader('Location', '/profile')->withStatus(302);
     }
 

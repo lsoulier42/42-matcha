@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Entity\Photo;
 use App\Repository\PhotoRepository;
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -90,30 +91,34 @@ final class PhotoService
             return;
         }
 
-        $filePath = $this->settings['uploads']['dir'] . str_replace('/assets/uploads', '', (string) $photo['path']);
+        $filePath = $this->settings['uploads']['dir'] . str_replace('/assets/uploads', '', $photo->path);
         if (is_file($filePath)) {
             @unlink($filePath);
         }
 
-        $wasProfile = (int) $photo['is_profile'] === 1;
+        $wasProfile = $photo->isProfile;
         $this->photos->delete($photoId);
 
         if ($wasProfile) {
             // La photo suivante devient photo de profil, si elle existe.
             $next = $this->photos->next($userId);
             if ($next !== null) {
-                $this->photos->setProfile($userId, (int) $next['id']);
+                $this->photos->setProfile($userId, $next->id);
             }
         }
     }
 
     /** Photo de profil d'un utilisateur (ou null). */
-    public function profilePhoto(int $userId): ?array
+    public function profilePhoto(int $userId): ?Photo
     {
         return $this->photos->profilePhoto($userId);
     }
 
-    /** Liste des photos d'un utilisateur (ordre de position). */
+    /**
+     * Liste des photos d'un utilisateur (ordre de position).
+     *
+     * @return Photo[]
+     */
     public function listByUser(int $userId): array
     {
         return $this->photos->listByUser($userId);
@@ -212,7 +217,7 @@ final class PhotoService
         if ($photo === null) {
             return null;
         }
-        $filePath = $this->settings['uploads']['dir'] . str_replace('/assets/uploads', '', (string) $photo['path']);
+        $filePath = $this->settings['uploads']['dir'] . str_replace('/assets/uploads', '', $photo->path);
         if (!is_file($filePath)) {
             return null;
         }
