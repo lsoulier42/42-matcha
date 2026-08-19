@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 /**
- * Envoi d'e-mails par SMTP maison (socket brut), sans dépendance externe.
- * En développement, le serveur est MailHog (docker-compose) : aucun
- * envoi réel, uniquement un catch dans l'interface web (port 8026).
+ * Email sending via raw SMTP socket, no external dependency.
+ * In development the server is MailHog (docker-compose): no real
+ * emails sent, just captured in the web UI (port 8026).
  */
 final class MailService
 {
@@ -15,7 +15,7 @@ final class MailService
     {
     }
 
-    /** E-mail de vérification de compte (lien unique). */
+    /** Account verification email (unique link). */
     public function sendVerification(string $to, string $username, string $link): bool
     {
         $body = $this->layout(
@@ -29,7 +29,7 @@ final class MailService
         return $this->send($to, 'Vérification de votre compte Matcha', $body);
     }
 
-    /** E-mail de réinitialisation de mot de passe (lien unique). */
+    /** Password reset email (unique link). */
     public function sendPasswordReset(string $to, string $username, string $link): bool
     {
         $body = $this->layout(
@@ -70,7 +70,7 @@ final class MailService
                 'Content-Type: text/html; charset=utf-8',
                 'Content-Transfer-Encoding: 8bit',
             ]);
-            // Anti dot-stuffing : une ligne commençant par un point est doublée.
+            // Anti dot-stuffing: a line starting with a dot is doubled.
             $body = str_replace("\r\n.", "\r\n..", $html);
             @fwrite($fp, $headers . "\r\n\r\n" . $body . "\r\n.\r\n");
             $ok = $this->expect($fp, 250);
@@ -84,7 +84,7 @@ final class MailService
     private function auth($fp): bool
     {
         if ($this->config['user'] === '') {
-            return true; // MailHog : pas d'authentification
+            return true; // MailHog: no authentication needed
         }
         return $this->cmd($fp, 'AUTH LOGIN', 334)
             && $this->cmd($fp, base64_encode((string) $this->config['user']), 334)
@@ -98,8 +98,8 @@ final class MailService
     }
 
     /**
-     * Lit une réponse SMTP complète : les réponses multi-lignes
-     * (continuation « 250-… ») sont consommées jusqu'à la ligne finale.
+     * Reads a full SMTP response: multi-line replies
+     * ("250-…" continuations) are consumed until the final line.
      */
     private function expect($fp, int $expected): bool
     {
@@ -110,7 +110,7 @@ final class MailService
                 return false;
             }
             $code = substr($line, 0, 3);
-            // Dernière ligne de la réponse : pas de tiret après le code.
+            // Last line of the response: no dash after the code.
             if (strlen($line) < 4 || $line[3] !== '-') {
                 break;
             }

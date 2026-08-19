@@ -11,9 +11,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Recherche avancée (section 3.4) : un ou plusieurs critères combinés
- * (tranche d'âge, plage de popularité, localisation, tags), résultats
- * triables et filtrables.
+ * Advanced search (section 3.4): one or more combined criteria
+ * (age range, popularity range, location, tags), sortable and
+ * filterable results.
  */
 final class SearchController
 {

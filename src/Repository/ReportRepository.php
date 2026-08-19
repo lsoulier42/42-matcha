@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Db\Query;
 
 /**
- * Signalements « faux compte » (un seul signalement par paire).
+ * "Fake account" reports (one report per pair).
  */
 final class ReportRepository
 {

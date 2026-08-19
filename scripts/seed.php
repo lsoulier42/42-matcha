@@ -3,18 +3,18 @@
 declare(strict_types=1);
 
 /*
- * Seed : génération de 500+ profils de démonstration (exigence du sujet).
+ * Seed: generate 500+ demo profiles (spec requirement).
  *
- * Usage : docker compose exec web php scripts/seed.php [--force]
- *   - sans argument : refuse si des utilisateurs existent déjà ;
- *   - --force : vide les tables et régénère tout.
+ * Usage: docker compose exec web php scripts/seed.php [--force]
+ *   - no argument: refuses if users already exist;
+ *   - --force: truncates tables and regenerates everything.
  *
- * Les profils seed :
- *   - mot de passe commun : SeedPass123! (documenté dans le README) ;
- *   - photos de profil générées localement avec GD (aucune ressource externe) ;
- *   - likes/visites/messages cohérents avec l'orientation (les likes seed
- *     respectent la même compatibilité que l'algorithme de suggestions) ;
- *   - popularité recalculée par PopularityService (formule documentée).
+ * Seed profiles:
+ *   - shared password: SeedPass123! (documented in the README);
+ *   - profile photos generated locally with GD (no external resources);
+ *   - likes/visits/messages consistent with orientation (seed likes
+ *     respect the same compatibility as the suggestion algorithm);
+ *   - popularity recomputed by PopularityService (documented formula).
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -32,7 +32,7 @@ $q = new Query(ConnectionFactory::create($settings['db']));
 $force = in_array('--force', $argv, true);
 
 if ((int) $q->value('SELECT COUNT(*) FROM users') > 0 && !$force) {
-    fwrite(STDERR, "La base contient déjà des utilisateurs. Utilisez --force pour tout régénérer.\n");
+    fwrite(STDERR, "Database already contains users. Use --force to regenerate everything.\n");
     exit(1);
 }
 
@@ -45,13 +45,13 @@ if ($force) {
         $q->run("TRUNCATE TABLE $table");
     }
     $q->run('SET FOREIGN_KEY_CHECKS = 1');
-    echo "Tables vidées.\n";
+    echo "Tables truncated.\n";
 }
 
 $faker = Factory::create('fr_FR');
 
 // ------------------------------------------------------------
-// Villes françaises (coordonnées réelles + léger bruit)
+// French cities (real coordinates + slight noise)
 // ------------------------------------------------------------
 $villes = [
     ['Paris', 48.8566, 2.3522], ['Lyon', 45.7640, 4.8357], ['Marseille', 43.2965, 5.3698],
@@ -69,7 +69,7 @@ $villes = [
 ];
 
 // ------------------------------------------------------------
-// Tags réutilisables (pool de départ)
+// Reusable tags (starter pool)
 // ------------------------------------------------------------
 $tagPool = [
     'vegan', 'geek', 'sport', 'musique', 'voyage', 'cuisine', 'cinema', 'lecture',
@@ -87,14 +87,14 @@ foreach ($tagPool as $name) {
 }
 
 // ------------------------------------------------------------
-// Utilitaires de génération d'avatars (GD, aucune ressource externe)
+// Avatar generation utilities (GD, no external resources)
 // ------------------------------------------------------------
 function makeAvatar(string $path, string $initials, array $c1, array $c2): void
 {
     $size = 300;
     $img = imagecreatetruecolor($size, $size);
 
-    // Dégradé vertical entre deux couleurs.
+    // Vertical gradient between two colours.
     for ($y = 0; $y < $size; $y++) {
         $t = $y / ($size - 1);
         $r = (int) round($c1[0] + ($c2[0] - $c1[0]) * $t);
@@ -103,11 +103,11 @@ function makeAvatar(string $path, string $initials, array $c1, array $c2): void
         imageline($img, 0, $y, $size, $y, imagecolorallocate($img, $r, $g, $b));
     }
 
-    // Cercles décoratifs translucides.
+    // Translucent decorative circles.
     imagefilledellipse($img, (int) ($size * 0.82), (int) ($size * 0.16), 170, 170, imagecolorallocatealpha($img, 255, 255, 255, 110));
     imagefilledellipse($img, (int) ($size * 0.10), (int) ($size * 0.88), 230, 230, imagecolorallocatealpha($img, 255, 255, 255, 65));
 
-    // Initiales : police intégrée, agrandies 2× (style « pixel »).
+    // Initials: built-in font, scaled 2× ("pixel" style).
     $tw = 100;
     $th = 60;
     $tmp = imagecreatetruecolor($tw, $th);
@@ -134,7 +134,7 @@ $palette = [
 ];
 
 // ------------------------------------------------------------
-// Compatibilité d'orientation (identique à MatchingService)
+// Orientation compatibility (identical to MatchingService)
 // ------------------------------------------------------------
 function covers(?string $orientation, ?string $ownGenre, ?string $targetGenre): bool
 {
@@ -154,7 +154,7 @@ function orientationCompatible(array $a, array $b): bool
 }
 
 // ------------------------------------------------------------
-// Génération des profils
+// Profile generation
 // ------------------------------------------------------------
 $count = 520;
 $passwordHash = password_hash('SeedPass123!', PASSWORD_DEFAULT);
@@ -163,7 +163,7 @@ $uploadDir = $settings['uploads']['dir'];
 $users = []; // id => [genre, orientation]
 $now = time();
 
-echo "Génération de $count profils…\n";
+echo "Generating $count profiles…\n";
 
 for ($i = 0; $i < $count; $i++) {
     $genre = mt_rand(1, 100) <= 48 ? 'homme' : (mt_rand(1, 100) <= 92 ? 'femme' : 'autre');
@@ -201,7 +201,7 @@ for ($i = 0; $i < $count; $i++) {
     ]);
     $users[$userId] = ['genre' => $genre, 'orientation' => $orientation];
 
-    // Photo de profil (obligatoire : sans elle, le like est refusé).
+    // Profile photo (required: without it, likes are refused).
     [$c1, $c2] = $palette[array_rand($palette)];
     $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1));
     $photoName = 'seed_' . $userId . '.jpg';
@@ -213,7 +213,7 @@ for ($i = 0; $i < $count; $i++) {
         'position' => 0,
     ]);
 
-    // 0–2 photos supplémentaires pour ~30 % des profils.
+    // 0–2 extra photos for ~30% of profiles.
     $extra = mt_rand(1, 100) <= 30 ? mt_rand(1, 2) : 0;
     for ($e = 1; $e <= $extra; $e++) {
         [$d1, $d2] = $palette[array_rand($palette)];
@@ -227,7 +227,7 @@ for ($i = 0; $i < $count; $i++) {
         ]);
     }
 
-    // 3–6 tags par profil (array_rand retourne des clés).
+    // 3–6 tags per profile (array_rand returns keys).
     $keys = (array) array_rand($tagPool, mt_rand(3, 6));
     foreach ($keys as $key) {
         $tagName = $tagPool[$key];
@@ -240,16 +240,16 @@ for ($i = 0; $i < $count; $i++) {
 }
 
 // ------------------------------------------------------------
-// Interactions : likes compatibles, visites, messages
+// Interactions: compatible likes, visits, messages
 // ------------------------------------------------------------
-echo "Génération des interactions…\n";
+echo "Generating interactions…\n";
 
 $ids = array_keys($users);
 $likeCount = 0;
 $matchCount = 0;
 
-// Likes toujours orientés compatiblement ; ~40 % de réciprocité
-// pour obtenir de vrais matchs (chat et notifications démontrables).
+// Likes always orientation-compatible; ~40% reciprocity to produce
+// real matches (demonstrable chat and notifications).
 for ($i = 0; $i < (int) ($count * 1.6); $i++) {
     $a = $ids[array_rand($ids)];
     $b = $ids[array_rand($ids)];
@@ -271,7 +271,7 @@ for ($i = 0; $i < (int) ($count * 1.6); $i++) {
     }
 }
 
-// Visites (une par paire, au plus ~350).
+// Visits (one per pair, at most ~350).
 $visitPairs = [];
 for ($i = 0; $i < 500; $i++) {
     $visitor = $ids[array_rand($ids)];
@@ -286,7 +286,7 @@ for ($i = 0; $i < 500; $i++) {
     );
 }
 
-// Messages entre matchs (les deux sens du like existent).
+// Messages between matches (both like directions exist).
 $matchPairs = $q->fetchAll(
     'SELECT l1.from_user_id AS a, l1.to_user_id AS b FROM likes l1
      JOIN likes l2 ON l2.from_user_id = l1.to_user_id AND l2.to_user_id = l1.from_user_id
@@ -309,15 +309,15 @@ foreach ($matchPairs as $pair) {
 }
 $matchCount = count($matchPairs);
 
-// Popularité recalculée (formule documentée : likes + 2×matchs − unlikes).
-echo "Recalcul de la popularité…\n";
+// Popularity recomputed (documented formula: likes + 2×matches − unlikes).
+echo "Recomputing popularity…\n";
 $popularity = new PopularityService($q);
 foreach ($ids as $id) {
     $popularity->recompute($id);
 }
 
 // ------------------------------------------------------------
-// Récapitulatif
+// Summary
 // ------------------------------------------------------------
 $totalUsers = (int) $q->value('SELECT COUNT(*) FROM users');
 $totalPhotos = (int) $q->value('SELECT COUNT(*) FROM photos');
@@ -326,7 +326,7 @@ $totalMessages = (int) $q->value('SELECT COUNT(*) FROM messages');
 $totalTags = (int) $q->value('SELECT COUNT(*) FROM tags');
 
 printf(
-    "Terminé en %.1f s — %d profils, %d photos, %d tags, %d likes (%d matchs), %d messages.\n",
+    "Done in %.1f s — %d profiles, %d photos, %d tags, %d likes (%d matches), %d messages.\n",
     microtime(true) - $start,
     $totalUsers,
     $totalPhotos,

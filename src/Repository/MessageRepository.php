@@ -10,7 +10,7 @@ use App\ViewModel\Conversation;
 use App\ViewModel\UserProfile;
 
 /**
- * Messages du chat (réservé aux utilisateurs connectés = like mutuel).
+ * Chat messages (restricted to matched users = mutual like).
  */
 final class MessageRepository
 {
@@ -18,7 +18,7 @@ final class MessageRepository
     {
     }
 
-    /** Conversations (matchs) avec dernier message et non-lus. */
+    /** Conversations (matches) with last message and unread count. */
     public function conversations(int $userId): array
     {
         $rows = $this->db->fetchAll(
@@ -51,7 +51,7 @@ final class MessageRepository
         return array_map(static fn (array $row): Conversation => Conversation::fromRow($row), $rows);
     }
 
-    /** Historique du fil (optionnellement après un id, pour le polling). */
+    /** Thread history (optionally after a given id, for polling). */
     public function history(int $userId, int $otherId, ?int $afterId = null): array
     {
         if ($afterId !== null) {
@@ -84,7 +84,7 @@ final class MessageRepository
         ]);
     }
 
-    /** Marque comme lus les messages reçus de $otherId. */
+    /** Marks messages received from $otherId as read. */
     public function markRead(int $userId, int $otherId): void
     {
         $this->db->run(
@@ -102,7 +102,7 @@ final class MessageRepository
         );
     }
 
-    /** Infos publiques d'un utilisateur (en-tête de discussion). */
+    /** Public info for a user (conversation header). */
     public function userInfo(int $userId): ?UserProfile
     {
         $row = $this->db->fetch(

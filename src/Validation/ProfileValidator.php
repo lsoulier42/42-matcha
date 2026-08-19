@@ -8,10 +8,10 @@ use App\Dto\ProfileUpdateData;
 use App\Repository\UserRepository;
 
 /**
- * Règles de mise à jour du profil : e-mail (unique, hors soi-même),
- * genre et préférences (enums), biographie, date de naissance (16–100 ans).
+ * Profile update rules: email (unique, excluding self), gender and
+ * preferences (enums), biography, date of birth (16–100 years).
  *
- * @return array<string, string> erreurs (champ => message), vide si valide
+ * @return array<string, string> errors (field => message), empty if valid
  */
 final class ProfileValidator
 {

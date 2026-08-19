@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Validation;
 
 /**
- * Validateur maison (aucun validateur intégré autorisé par le sujet).
- * Accumule des messages d'erreur en français, champ par champ.
+ * Custom validator (no built-in validator allowed by the spec).
+ * Accumulates error messages field by field.
  */
 final class Validator
 {
@@ -34,7 +34,7 @@ final class Validator
         return $this;
     }
 
-    /** Username : 3–30 caractères alphanumériques ou soulignés. */
+    /** Username: 3–30 alphanumeric or underscore characters. */
     public function username(string $field, mixed $value): self
     {
         if ($value === null || $value === '') {
@@ -46,7 +46,7 @@ final class Validator
         return $this;
     }
 
-    /** Nom / prénom : lettres, espaces, apostrophes, tirets. */
+    /** Name / first name: letters, spaces, apostrophes, hyphens. */
     public function name(string $field, mixed $value, string $label): self
     {
         if ($value === null || $value === '') {
@@ -79,7 +79,7 @@ final class Validator
         return $this;
     }
 
-    /** Ajoute une erreur directement (ex. règles métier). */
+    /** Adds an error directly (e.g. business rules). */
     public function add(string $field, string $message): self
     {
         $this->errors[$field] = $message;

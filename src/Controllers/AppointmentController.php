@@ -14,8 +14,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Bonus : planification de rendez-vous / événements réels
- * entre utilisateurs connectés (like mutuel, sans blocage).
+ * Bonus: real-world event/appointment scheduling
+ * between matched users (mutual like, no block).
  */
 final class AppointmentController
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Rendez-vous entre utilisateurs connectés (bonus).
+ * Appointment between matched users (bonus).
  */
 final readonly class Appointment
 {

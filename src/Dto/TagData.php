@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Nom de tag normalisé, issu du formulaire (POST /profile/tags).
- * Normalisation centralisée : minuscules, sans « # », espaces → tirets.
+ * Normalised tag name from the form (POST /profile/tags).
+ * Centralised normalisation: lowercase, no '#', spaces → hyphens.
  */
 final readonly class TagData
 {

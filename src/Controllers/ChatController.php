@@ -12,9 +12,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Chat temps réel (section 3.6) : réservé aux utilisateurs connectés
- * (like mutuel), messages reçus ≤ 10 s via polling AJAX 5 s, badge
- * global de nouveaux messages sur toutes les pages.
+ * Real-time chat (section 3.6): restricted to matched users
+ * (mutual like), messages received ≤ 10 s via 5 s AJAX polling,
+ * global unread badge on all pages.
  */
 final class ChatController
 {
@@ -24,7 +24,7 @@ final class ChatController
     ) {
     }
 
-    /** Liste des conversations (matchs actifs). */
+    /** Conversation list (active matches). */
     public function index(Request $request, Response $response): Response
     {
         $userId = (int) $_SESSION['user_id'];
@@ -33,7 +33,7 @@ final class ChatController
         ]);
     }
 
-    /** Fil de discussion avec un match. */
+    /** Thread view with a match. */
     public function show(Request $request, Response $response, array $args): Response
     {
         $userId = (int) $_SESSION['user_id'];
@@ -56,7 +56,7 @@ final class ChatController
         ]);
     }
 
-    /** Envoi d'un message (formulaire classique ou AJAX). */
+    /** Send a message (classic form or AJAX). */
     public function send(Request $request, Response $response, array $args): Response
     {
         $userId = (int) $_SESSION['user_id'];
@@ -82,7 +82,7 @@ final class ChatController
         return $response->withHeader('Location', '/messages/' . $otherId)->withStatus(302);
     }
 
-    /** Polling AJAX : nouveaux messages depuis l'id $after (chat ouvert). */
+    /** AJAX polling: new messages since id $after (chat open). */
     public function apiHistory(Request $request, Response $response, array $args): Response
     {
         $userId = (int) $_SESSION['user_id'];

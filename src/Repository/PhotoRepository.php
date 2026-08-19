@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\Entity\Photo;
 
 /**
- * Photos des profils (maximum 5, une photo de profil).
+ * Profile photos (maximum 5, one profile photo).
  */
 final class PhotoRepository
 {
@@ -55,7 +55,7 @@ final class PhotoRepository
         );
     }
 
-    /** Désigne $photoId comme unique photo de profil de $userId. */
+    /** Sets $photoId as the sole profile photo for $userId. */
     public function setProfile(int $userId, int $photoId): void
     {
         $this->db->run('UPDATE photos SET is_profile = 0 WHERE user_id = ?', [$userId]);
@@ -67,7 +67,7 @@ final class PhotoRepository
         $this->db->delete('photos', 'id = ?', [$photoId]);
     }
 
-    /** Première photo restante (pour promouvoir après suppression). */
+    /** First remaining photo (for promotion after deletion). */
     public function next(int $userId): ?Photo
     {
         $row = $this->db->fetch(
@@ -86,7 +86,7 @@ final class PhotoRepository
         return $row === null ? null : Photo::fromRow($row);
     }
 
-    /** L'utilisateur a-t-il une photo de profil ? (exigence pour liker) */
+    /** Does the user have a profile photo? (required to like) */
     public function hasProfilePhoto(int $userId): bool
     {
         return $this->db->value(

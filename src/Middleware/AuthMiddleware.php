@@ -11,8 +11,8 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use Slim\Psr7\Response as SlimResponse;
 
 /**
- * Accès privé : exige une session authentifiée côté serveur.
- * Pages → redirection vers la connexion ; /api/* → 401 JSON.
+ * Private access: requires a server-side authenticated session.
+ * Pages → redirect to login; /api/* → 401 JSON.
  */
 final class AuthMiddleware implements MiddlewareInterface
 {

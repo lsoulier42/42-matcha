@@ -7,8 +7,8 @@ namespace App\ViewModel;
 use App\Entity\User;
 
 /**
- * Profil public (consultation d'un autre utilisateur ou mon propre profil) :
- * toutes les infos SAUF l'e-mail et le mot de passe, plus le statut en ligne.
+ * Public profile (viewing another user or my own profile):
+ * all info EXCEPT email and password, plus online status.
  */
 final readonly class UserProfile
 {
@@ -47,7 +47,7 @@ final readonly class UserProfile
         );
     }
 
-    /** Conversion depuis l'entité User (profil courant, session). */
+    /** Conversion from the User entity (current profile, session). */
     public static function fromUser(User $user): self
     {
         $lastSeen = (string) ($user->derniereConnexion ?? '');
@@ -82,7 +82,7 @@ final readonly class UserProfile
             return false;
         }
         $ts = strtotime($lastSeen);
-        return $ts !== false && (time() - $ts) < 300; // en ligne depuis moins de 5 minutes
+        return $ts !== false && (time() - $ts) < 300; // online for less than 5 minutes
     }
 
     private static function lastSeen(string $lastSeen): string

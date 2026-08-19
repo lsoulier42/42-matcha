@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 /*
- * Définitions du conteneur php-di.
- * Les contrôleurs/services sont autowirés automatiquement par php-di :
- * seules les dépendances à configuration explicite sont déclarées ici.
+ * php-di container definitions.
+ * Controllers/services are autowired automatically by php-di:
+ * only dependencies needing explicit configuration are declared here.
  */
 
 use App\Controllers\AuthController;
@@ -47,7 +47,7 @@ return [
         return Twig::create($cfg['templates'], $cfg['options']);
     },
 
-    // Services à configuration scalaire (tableaux) : injection explicite.
+    // Services with scalar configuration (arrays): explicit injection.
     MailService::class => static function (Container $c): MailService {
         return new MailService($c->get('settings')['mail']);
     },

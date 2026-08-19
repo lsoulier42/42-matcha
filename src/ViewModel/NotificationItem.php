@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\ViewModel;
 
 /**
- * Notification affichée (libellé français, date, auteur).
+ * Displayed notification (French label, date, actor).
  */
 final readonly class NotificationItem
 {
-    /** Libellés français par type d'événement. */
+    /** French labels by event type. */
     public const LABELS = [
         'like' => 'vous a liké',
         'visit' => 'a consulté votre profil',

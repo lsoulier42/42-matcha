@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Tag réutilisable (centre d'intérêt partagé).
+ * Reusable tag (shared interest).
  */
 final readonly class Tag
 {

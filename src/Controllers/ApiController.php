@@ -10,9 +10,9 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 /**
- * Endpoint de polling global (toutes les 5 s) : badges des messages
- * et des notifications non lus, visibles depuis n'importe quelle page.
- * Garantit le délai de réception ≤ 10 s exigé par le sujet.
+ * Global polling endpoint (every 5 s): unread message and notification
+ * badges, accessible from any page.
+ * Guarantees the ≤ 10 s delivery latency required by the spec.
  */
 final class ApiController
 {

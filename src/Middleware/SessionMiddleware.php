@@ -10,9 +10,9 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 /**
- * Démarre la session PHP avec des paramètres de cookie sécurisés
- * (HttpOnly, SameSite=Lax, option Secure selon l'environnement).
- * La session est ouverte en middleware, jamais dans une vue.
+ * Starts the PHP session with secure cookie settings
+ * (HttpOnly, SameSite=Lax, optional Secure based on environment).
+ * The session is opened in middleware, never in a view.
  */
 final class SessionMiddleware implements MiddlewareInterface
 {

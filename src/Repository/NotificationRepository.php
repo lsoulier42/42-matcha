@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\ViewModel\NotificationItem;
 
 /**
- * Notifications temps réel (like, visit, message, match, unlike).
+ * Real-time notifications (like, visit, message, match, unlike).
  */
 final class NotificationRepository
 {
@@ -42,8 +42,8 @@ final class NotificationRepository
     }
 
     /**
-     * Liste des notifications récentes avec l'auteur ;
-     * les notifications d'utilisateurs bloqués sont exclues.
+     * Recent notifications with the actor;
+     * notifications from blocked users are excluded.
      *
      * @return NotificationItem[]
      */
@@ -66,7 +66,7 @@ final class NotificationRepository
         return array_map(static fn (array $row): NotificationItem => NotificationItem::fromRow($row), $rows);
     }
 
-    /** Supprime les notifications non lues d'un acteur donné (unlike/blocage). */
+    /** Deletes unread notifications from a given actor (unlike/block). */
     public function clearUnreadFrom(int $userId, int $actorId): void
     {
         $this->db->run(

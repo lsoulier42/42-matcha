@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\ViewModel\ProfileCard;
 
 /**
- * Likes (un par paire), unlikes tracés, compteurs de popularité.
+ * Likes (one per pair), tracked unlikes, popularity counters.
  */
 final class LikeRepository
 {
@@ -34,7 +34,7 @@ final class LikeRepository
         $this->db->delete('likes', 'from_user_id = ? AND to_user_id = ?', [$fromUserId, $toUserId]);
     }
 
-    /** Trace un unlike (entre dans la formule de popularité). */
+    /** Records an unlike (feeds into the popularity formula). */
     public function recordUnlike(int $fromUserId, int $toUserId): void
     {
         $this->db->run(
@@ -54,7 +54,7 @@ final class LikeRepository
         return (int) $this->db->value('SELECT COUNT(*) FROM unlikes WHERE to_user_id = ?', [$userId]);
     }
 
-    /** Nombre de matchs actifs (likes mutuels encore en vigueur). */
+    /** Number of active matches (mutual likes still in effect). */
     public function countMatches(int $userId): int
     {
         return (int) $this->db->value(
@@ -65,7 +65,7 @@ final class LikeRepository
         );
     }
 
-    /** « Qui m'a liké » : cartes des auteurs avec leur photo. */
+    /** "Who liked me": author cards with their photo. */
     public function listLikers(int $userId): array
     {
         $rows = $this->db->fetchAll(

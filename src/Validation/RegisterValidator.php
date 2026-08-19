@@ -9,11 +9,11 @@ use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
 
 /**
- * Règles d'inscription : champs obligatoires, e-mail valide et unique,
- * username au bon format et unique, mot de passe sécurisé (blacklist
- * des mots anglais courants + complexité) et confirmation.
+ * Registration rules: required fields, valid and unique email,
+ * correctly formatted and unique username, secure password
+ * (common English word blacklist + complexity) and confirmation.
  *
- * @return array<string, string> erreurs (champ => message), vide si valide
+ * @return array<string, string> errors (field => message), empty if valid
  */
 final class RegisterValidator
 {

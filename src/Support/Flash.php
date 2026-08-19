@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Messages flash en session (affichés une seule fois, dans le layout).
+ * Session flash messages (displayed once, in the layout).
  */
 final class Flash
 {
@@ -14,7 +14,7 @@ final class Flash
         $_SESSION['flash'][$type][] = $message;
     }
 
-    /** Récupère et efface les messages flash. */
+    /** Retrieves and clears flash messages. */
     public static function pull(): array
     {
         $flash = $_SESSION['flash'] ?? [];

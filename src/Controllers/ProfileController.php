@@ -23,11 +23,11 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Profil utilisateur (section 3.2 du sujet) : genre, préférences, bio,
- * tags réutilisables, photos (max 5), note de popularité, localisation
- * (GPS avec consentement explicite ou saisie manuelle), qui m'a consulté,
- * qui m'a liké. Les règles de saisie vivent dans les validateurs, le SQL
- * dans les repositories.
+ * User profile (section 3.2 of the spec): gender, preferences, bio,
+ * reusable tags, photos (max 5), popularity score, location
+ * (GPS with explicit consent or manual input), who viewed me,
+ * who liked me. Input rules live in validators; SQL lives in
+ * repositories.
  */
 final class ProfileController
 {
@@ -46,7 +46,7 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
-    // Affichage / édition
+    // Display / editing
     // -------------------------------------------------------------
 
     public function show(Request $request, Response $response): Response
@@ -77,7 +77,7 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
-    // Localisation (consentement GPS explicite ou saisie manuelle)
+    // Location (explicit GPS consent or manual input)
     // -------------------------------------------------------------
 
     public function updateLocation(Request $request, Response $response): Response
@@ -135,7 +135,7 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
-    // Bonus galerie : édition d'image de base (GD)
+    // Bonus gallery: basic image editing (GD)
     // -------------------------------------------------------------
 
     public function rotatePhoto(Request $request, Response $response, array $args): Response
@@ -176,7 +176,7 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
-    // Tags réutilisables
+    // Reusable tags
     // -------------------------------------------------------------
 
     public function addTag(Request $request, Response $response): Response
@@ -190,7 +190,7 @@ final class ProfileController
             return $response->withHeader('Location', '/profile')->withStatus(302);
         }
 
-        // Tags réutilisables : on récupère l'existant ou on le crée.
+        // Reusable tags: reuse existing or create new.
         $tagId = $this->tags->findIdByName($data->name);
         if ($tagId === null) {
             $tagId = $this->tags->create($data->name);
@@ -208,7 +208,7 @@ final class ProfileController
         return $response->withHeader('Location', '/profile')->withStatus(302);
     }
 
-    /** Autocomplétion des tags existants (AJAX, JSON). */
+    /** Autocomplete existing tags (AJAX, JSON). */
     public function apiTags(Request $request, Response $response): Response
     {
         $q = mb_strtolower(trim((string) $request->getQueryParams()['q'] ?? ''));
@@ -219,7 +219,7 @@ final class ProfileController
     }
 
     // -------------------------------------------------------------
-    // Qui m'a consulté / qui m'a liké
+    // Who viewed me / Who liked me
     // -------------------------------------------------------------
 
     public function visits(Request $request, Response $response): Response
@@ -242,7 +242,7 @@ final class ProfileController
     // Helpers
     // -------------------------------------------------------------
 
-    /** Données partagées de la page profil (formulaire + galerie). */
+    /** Shared data for the profile page (form + gallery). */
     private function profileViewData(User $user, array $errors = []): array
     {
         $userId = $user->id;
@@ -256,7 +256,7 @@ final class ProfileController
         ];
     }
 
-    /** Après toute modification, la session reflète le profil à jour. */
+    /** After any edit, the session reflects the up-to-date profile. */
     private function refreshSession(int $userId): void
     {
         $user = $this->users->findById($userId);

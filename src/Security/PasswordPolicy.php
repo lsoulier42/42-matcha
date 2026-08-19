@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Security;
 
 /**
- * Politique de mot de passe (exigence explicite du sujet) :
- *  - mots anglais couramment utilisés REFUSÉS (blacklist),
- *  - exigence de complexité : 8 caractères min, minuscule, majuscule,
- *    chiffre et symbole.
+ * Password policy (explicit spec requirement):
+ *  - commonly used English words REJECTED (blacklist),
+ *  - complexity requirement: min 8 characters, lowercase, uppercase,
+ *    digit and symbol.
  */
 final class PasswordPolicy
 {
@@ -35,7 +35,7 @@ final class PasswordPolicy
         'tigger', 'charlie', 'thomas', 'hannah', 'jessica', 'daniel',
     ];
 
-    /** @return string[] messages d'erreur (vide si le mot de passe est accepté) */
+    /** @return string[] error messages (empty if the password is accepted) */
     public static function check(string $password): array
     {
         $errors = [];

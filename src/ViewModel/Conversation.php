@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\ViewModel;
 
 /**
- * Conversation (match actif) avec dernier message et nombre de non-lus.
+ * Conversation (active match) with last message and unread count.
  */
 final readonly class Conversation
 {

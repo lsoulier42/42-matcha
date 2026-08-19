@@ -14,8 +14,8 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use Slim\Views\Twig;
 
 /**
- * Injecte les variables globales des vues Twig :
- * app, utilisateur courant, jeton CSRF, compteurs de non-lus (badges).
+ * Injects Twig global view variables:
+ * app config, current user, CSRF token, unread counters (badges).
  */
 final class ViewGlobalsMiddleware implements MiddlewareInterface
 {
@@ -38,10 +38,10 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
         $env->addGlobal('current_user', $userId !== null ? ($_SESSION['user'] ?? null) : null);
         $env->addGlobal('csrf_token', $_SESSION['csrf_token'] ?? '');
 
-        // Messages flash (consommés à l'affichage).
+        // Flash messages (consumed on display).
         $env->addGlobal('flash', Flash::pull());
 
-        // Badges temps réel : recalculés à chaque requête (polling / pages).
+        // Real-time badges: recalculated on every request (polling / pages).
         $unreadMessages = 0;
         $unreadNotifs = 0;
         if ($userId !== null) {

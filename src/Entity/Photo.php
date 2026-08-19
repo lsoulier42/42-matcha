@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Photo d'un profil (jusqu'à 5, une photo de profil).
+ * Profile photo (up to 5, one is the profile photo).
  */
 final readonly class Photo
 {

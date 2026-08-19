@@ -10,9 +10,9 @@ use App\Repository\MessageRepository;
 use App\ViewModel\UserProfile;
 
 /**
- * Chat réservé aux utilisateurs « connectés » (like mutuel, section 3.6).
- * Un unlike ou un blocage coupe réellement le chat côté serveur :
- * l'envoi est refusé sans like mutuel et sans blocage.
+ * Chat restricted to "connected" users (mutual like, section 3.6).
+ * An unlike or block genuinely cuts the chat server-side:
+ * sending is refused without a mutual like and without a block.
  */
 final class MessageService
 {
@@ -24,7 +24,7 @@ final class MessageService
     ) {
     }
 
-    /** Le chat est-il autorisé entre a et b ? (like mutuel + aucun blocage) */
+    /** Is chat allowed between a and b? (mutual like + no block) */
     public function canChat(int $a, int $b): bool
     {
         if ($a === $b) {
@@ -36,27 +36,27 @@ final class MessageService
         return $this->likes->exists($a, $b) && $this->likes->exists($b, $a);
     }
 
-    /** Liste des conversations (matchs) avec dernier message et non-lus. */
+    /** Conversation list (matches) with last message and unread count. */
     public function conversations(int $userId): array
     {
         return $this->messages->conversations($userId);
     }
 
-    /** Historique du fil (optionnellement après un id, pour le polling). */
+    /** Thread history (optionally after a given id, for polling). */
     public function history(int $userId, int $otherId, ?int $afterId = null): array
     {
         return $this->messages->history($userId, $otherId, $afterId);
     }
 
-    /** Infos publiques d'un utilisateur (pour l'en-tête de discussion). */
+    /** Public info for a user (for the conversation header). */
     public function userInfo(int $userId): ?UserProfile
     {
         return $this->messages->userInfo($userId);
     }
 
     /**
-     * Envoie un message. Retourne l'id créé, ou null si refusé
-     * (pas de like mutuel, blocage, contenu invalide).
+     * Sends a message. Returns the created id, or null if rejected
+     * (no mutual like, blocked, invalid content).
      */
     public function send(int $from, int $to, string $content): ?int
     {
@@ -73,13 +73,13 @@ final class MessageService
         return $id;
     }
 
-    /** Marque comme lus les messages reçus de $otherId. */
+    /** Marks messages received from $otherId as read. */
     public function markRead(int $userId, int $otherId): void
     {
         $this->messages->markRead($userId, $otherId);
     }
 
-    /** Nombre total de messages non lus. */
+    /** Total unread message count. */
     public function unreadCount(int $userId): int
     {
         return $this->messages->unreadCount($userId);

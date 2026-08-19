@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Mise à jour de localisation normalisée (POST /profile/location).
- * `ville` est null si vide ; `lat`/`lng` sont null si absents ou vides
- * (une valeur `'0'` reste un float valide 0.0, pas null).
+ * Normalised location update data (POST /profile/location).
+ * `ville` is null when empty; `lat`/`lng` are null when absent or empty
+ * (a `'0'` value remains a valid float 0.0, not null).
  */
 final readonly class LocationUpdateData
 {
@@ -33,7 +33,7 @@ final readonly class LocationUpdateData
         );
     }
 
-    /** Colonnes à mettre à jour dans la table users. */
+    /** Columns to update in the users table. */
     public function toRecord(): array
     {
         return [

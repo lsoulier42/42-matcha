@@ -14,12 +14,12 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Inscription, vérification d'e-mail, connexion, mot de passe oublié,
- * réinitialisation et déconnexion.
+ * Registration, email verification, login, forgotten password,
+ * password reset, and logout.
  *
- * Ce contrôleur est un adaptateur HTTP fin : il extrait les données
- * de la requête, délègue la logique métier à AuthService et construit
- * la réponse (rendu Twig ou redirection).
+ * This controller is a thin HTTP adapter: it extracts request data,
+ * delegates business logic to AuthService, and builds the response
+ * (Twig render or redirect).
  */
 final class AuthController
 {
@@ -32,7 +32,7 @@ final class AuthController
     }
 
     // -------------------------------------------------------------
-    // Inscription
+    // Registration
     // -------------------------------------------------------------
 
     public function showRegister(Request $request, Response $response): Response
@@ -72,7 +72,7 @@ final class AuthController
     }
 
     // -------------------------------------------------------------
-    // Vérification de l'e-mail
+    // Email verification
     // -------------------------------------------------------------
 
     public function verify(Request $request, Response $response, array $args): Response
@@ -87,7 +87,7 @@ final class AuthController
     }
 
     // -------------------------------------------------------------
-    // Connexion / déconnexion
+    // Login / logout
     // -------------------------------------------------------------
 
     public function showLogin(Request $request, Response $response): Response
@@ -130,7 +130,7 @@ final class AuthController
     }
 
     // -------------------------------------------------------------
-    // Mot de passe oublié / réinitialisation
+    // Forgotten password / reset
     // -------------------------------------------------------------
 
     public function showForgot(Request $request, Response $response): Response
@@ -154,7 +154,7 @@ final class AuthController
             $this->auth->requestPasswordReset($email);
         }
 
-        // Toujours le même message : pas d'énumération d'utilisateurs.
+        // Always the same message: no user enumeration.
         Flash::set('success', 'Si un compte existe avec cette adresse e-mail, un lien de réinitialisation vient d\'être envoyé.');
         return $response->withHeader('Location', '/auth/forgot')->withStatus(302);
     }
@@ -205,7 +205,7 @@ final class AuthController
         return $response->withHeader('Location', '/suggestions')->withStatus(302);
     }
 
-    /** Ne jamais réafficher le mot de passe dans le formulaire. */
+    /** Never re-populate the password fields in the form. */
     private function cleanOld(array $data): array
     {
         unset($data['password'], $data['password_confirm']);

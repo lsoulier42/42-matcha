@@ -8,13 +8,13 @@ use App\Repository\LikeRepository;
 use App\Repository\UserRepository;
 
 /**
- * Note de popularité — formule documentée (voir README.md) :
+ * Popularity score — documented formula (see README.md):
  *
- *   Popularité = (likes reçus) + 2 × (matchs actifs) − (unlikes reçus)
+ *   Popularity = (likes received) + 2 × (active matches) − (unlikes received)
  *
- * Plafonnée entre 0 et 10, arrondie à 2 décimales, stockée dans
- * users.note_popularite et recalculée à chaque like / unlike.
- * La même formule est utilisée partout où la note est affichée ou triée.
+ * Capped between 0 and 10, rounded to 2 decimal places, stored in
+ * users.note_popularite and recomputed on every like / unlike.
+ * The same formula is used everywhere the score is displayed or sorted.
  */
 final class PopularityService
 {
@@ -36,7 +36,7 @@ final class PopularityService
         $this->users->update($userId, ['note_popularite' => round($score, 2)]);
     }
 
-    /** Note d'un utilisateur (0.00–10.00). */
+    /** Score for a user (0.00–10.00). */
     public function score(int $userId): float
     {
         $user = $this->users->findById($userId);

@@ -8,8 +8,8 @@ use App\Db\Query;
 use App\Entity\Token;
 
 /**
- * Jetons à usage unique : vérification d'e-mail et réinitialisation
- * de mot de passe (64 caractères hexadécimaux, expiration 24 h).
+ * Single-use tokens: email verification and password reset
+ * (64 hex characters, 24-hour expiry).
  */
 final class TokenRepository
 {
@@ -27,7 +27,7 @@ final class TokenRepository
         ]);
     }
 
-    /** Jeton de vérification d'e-mail (avec l'utilisateur), ou null si invalide. */
+    /** Email verification token (with the user), or null if invalid. */
     public function findValidVerify(string $token): ?Token
     {
         if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
@@ -43,7 +43,7 @@ final class TokenRepository
         return $row === null ? null : Token::fromRow($row);
     }
 
-    /** Jeton de réinitialisation non utilisé et non expiré, ou null. */
+    /** Unused and non-expired reset token, or null. */
     public function findValidReset(string $token): ?Token
     {
         if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {

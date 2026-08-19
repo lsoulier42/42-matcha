@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\ViewModel;
 
 /**
- * Données de la page carte : ma position et les marqueurs suggérés.
+ * Map page data: my position and the suggested markers.
  */
 final readonly class MapView
 {

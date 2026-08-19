@@ -7,11 +7,11 @@ namespace App\Validation;
 use App\Dto\LocationUpdateData;
 
 /**
- * Règles de localisation : consentement GPS explicite avec coordonnées
- * valides, OU saisie manuelle obligatoire de la ville/quartier (exigence
- * du sujet pour le matching en cas de refus du GPS).
+ * Location rules: explicit GPS consent with valid coordinates,
+ * OR mandatory manual city/district input (spec requirement for
+ * matching when GPS is declined).
  *
- * @return array<string, string> erreurs (champ => message), vide si valide
+ * @return array<string, string> errors (field => message), empty if valid
  */
 final class LocationValidator
 {
@@ -30,7 +30,7 @@ final class LocationValidator
                 $v->add('location', 'Coordonnées GPS invalides.');
             }
         } elseif ($ville === '') {
-            // Exigence du sujet : refus du GPS → saisie manuelle obligatoire.
+            // Spec requirement: GPS declined → manual input mandatory.
             $v->add('ville', 'La localisation manuelle (ville ou quartier) est obligatoire pour le matching.');
         }
 

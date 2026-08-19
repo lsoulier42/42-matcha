@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\Entity\Appointment;
 
 /**
- * Rendez-vous entre utilisateurs connectés (bonus).
+ * Appointments between matched users (bonus).
  */
 final class AppointmentRepository
 {
@@ -16,7 +16,7 @@ final class AppointmentRepository
     {
     }
 
-    /** Rendez-vous impliquant $userId, avec l'autre participant. */
+    /** Appointments involving $userId, with the other participant. */
     public function listFor(int $userId): array
     {
         $rows = $this->db->fetchAll(
@@ -39,7 +39,7 @@ final class AppointmentRepository
         return $this->db->insert('appointments', $data);
     }
 
-    /** Supprime un rendez-vous dont $userId est participant. */
+    /** Deletes an appointment where $userId is a participant. */
     public function delete(int $id, int $userId): void
     {
         $this->db->delete(

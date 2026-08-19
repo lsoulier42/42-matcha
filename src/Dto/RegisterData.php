@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Données d'inscription normalisées, issues du formulaire (GET /auth/register).
- * Le hash du mot de passe est calculé à la persistance via toRecord().
+ * Normalised registration data from the form (GET /auth/register).
+ * The password hash is computed at persistence time via toRecord().
  */
 final readonly class RegisterData
 {
@@ -32,7 +32,7 @@ final readonly class RegisterData
         );
     }
 
-    /** Ligne à insérer dans la table users. */
+    /** Row to insert into the users table. */
     public function toRecord(): array
     {
         return [

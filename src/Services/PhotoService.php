@@ -9,11 +9,11 @@ use App\Repository\PhotoRepository;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
- * Upload et gestion des photos de profil (maximum 5, une photo de profil).
- * Validation côté serveur : magic bytes via getimagesize(), taille max,
- * renommage systématique (aucun nom fourni par l'utilisateur), dossier
- * protégé contre l'exécution de scripts (public/assets/uploads/.htaccess).
- * Bonus galerie : édition d'image de base avec GD (rotation, filtres, recadrage).
+ * Upload and management of profile photos (maximum 5, one profile photo).
+ * Server-side validation: magic bytes via getimagesize(), max size,
+ * systematic renaming (no user-supplied filenames), directory protected
+ * against script execution (public/assets/uploads/.htaccess).
+ * Bonus gallery: basic image editing with GD (rotation, filters, crop).
  */
 final class PhotoService
 {
@@ -24,9 +24,9 @@ final class PhotoService
     }
 
     /**
-     * Valide et enregistre une photo.
+     * Validates and saves a photo.
      *
-     * @return string[] messages d'erreur (vide si succès)
+     * @return string[] error messages (empty on success)
      */
     public function upload(int $userId, ?UploadedFileInterface $file): array
     {
@@ -45,7 +45,7 @@ final class PhotoService
             return ['Fichier trop volumineux (maximum 5 Mo).'];
         }
 
-        // Validation du vrai contenu (magic bytes), pas du MIME déclaré.
+        // Validate actual content (magic bytes), not the declared MIME type.
         $stream = $file->getStream();
         $tmpPath = (string) $stream->getMetadata('uri');
         $info = @getimagesize($tmpPath);
@@ -57,7 +57,7 @@ final class PhotoService
             return ['Format d\'image non autorisé (PNG, JPG, GIF ou WebP uniquement).'];
         }
 
-        // Renommage sûr : aucun élément fourni par l'utilisateur ne subsiste.
+        // Safe renaming: no user-supplied element survives in the filename.
         $ext = $cfg['allowed'][$mime];
         $filename = 'u' . $userId . '_' . bin2hex(random_bytes(10)) . '.' . $ext;
         $target = $cfg['dir'] . '/' . $filename;
@@ -67,23 +67,23 @@ final class PhotoService
             return ['Impossible d\'enregistrer le fichier.'];
         }
 
-        // Première photo = photo de profil par défaut.
+        // First photo = default profile photo.
         $isProfile = $this->photos->countForUser($userId) === 0 ? 1 : 0;
         $this->photos->create($userId, '/assets/uploads/' . $filename, $isProfile, $this->photos->nextPosition($userId));
 
         return [];
     }
 
-    /** Désigne la photo de profil (une seule à la fois). */
+    /** Sets the profile photo (one at a time). */
     public function setProfile(int $userId, int $photoId): void
     {
         if ($this->photos->findOwned($photoId, $userId) === null) {
-            return; // pas la propriété de l'utilisateur : on ignore
+            return; // not owned by the user: silently ignore
         }
         $this->photos->setProfile($userId, $photoId);
     }
 
-    /** Supprime une photo (et son fichier). */
+    /** Deletes a photo (and its file). */
     public function delete(int $userId, int $photoId): void
     {
         $photo = $this->photos->findOwned($photoId, $userId);
@@ -100,7 +100,7 @@ final class PhotoService
         $this->photos->delete($photoId);
 
         if ($wasProfile) {
-            // La photo suivante devient photo de profil, si elle existe.
+            // The next photo becomes profile photo, if it exists.
             $next = $this->photos->next($userId);
             if ($next !== null) {
                 $this->photos->setProfile($userId, $next->id);
@@ -108,14 +108,14 @@ final class PhotoService
         }
     }
 
-    /** Photo de profil d'un utilisateur (ou null). */
+    /** Profile photo for a user (or null). */
     public function profilePhoto(int $userId): ?Photo
     {
         return $this->photos->profilePhoto($userId);
     }
 
     /**
-     * Liste des photos d'un utilisateur (ordre de position).
+     * List of photos for a user (position order).
      *
      * @return Photo[]
      */
@@ -125,10 +125,10 @@ final class PhotoService
     }
 
     // ------------------------------------------------------------
-    // Bonus galerie : édition d'image de base avec GD
+    // Bonus gallery: basic image editing with GD
     // ------------------------------------------------------------
 
-    /** Rotation de 90/180/270 degrés (GD imagerotate). */
+    /** Rotate by 90/180/270 degrees (GD imagerotate). */
     public function rotate(int $userId, int $photoId, int $degrees): bool
     {
         $degrees = ((int) $degrees % 360 + 360) % 360;
@@ -148,7 +148,7 @@ final class PhotoService
         return $ok;
     }
 
-    /** Filtres de base : grayscale, sepia, negative, blur (GD imagefilter). */
+    /** Basic filters: grayscale, sepia, negative, blur (GD imagefilter). */
     public function applyFilter(int $userId, int $photoId, string $filter): bool
     {
         $img = $this->loadOwned($userId, $photoId);
@@ -183,8 +183,8 @@ final class PhotoService
     }
 
     /**
-     * Recadrage (GD imagecrop). Les coordonnées sont en pixels de
-     * l'image d'origine ; elles sont bornées côté serveur.
+     * Crop (GD imagecrop). Coordinates are in original-image pixels;
+     * they are clamped server-side.
      */
     public function crop(int $userId, int $photoId, int $x, int $y, int $width, int $height): bool
     {
@@ -210,7 +210,7 @@ final class PhotoService
         return $ok;
     }
 
-    /** Charge une photo appartenant à l'utilisateur, prête pour GD. */
+    /** Loads a photo owned by the user, ready for GD processing. */
     private function loadOwned(int $userId, int $photoId): ?array
     {
         $photo = $this->photos->findOwned($photoId, $userId);
@@ -239,7 +239,7 @@ final class PhotoService
         return [$image, $filePath, $mime];
     }
 
-    /** Réécrit l'image dans son format d'origine. */
+    /** Rewrites the image in its original format. */
     private function save($image, string $path, string $mime): bool
     {
         return match ($mime) {

@@ -20,10 +20,10 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Consultation de profil public (section 3.5) : toutes les infos sauf
- * e-mail et mot de passe, historique de visites, like/unlike (refusé
- * côté serveur sans photo de profil), like mutuel = « connectés »,
- * blocage, signalement, statut en ligne. Le SQL vit dans les repositories.
+ * Public profile viewing (section 3.5): all info except email and
+ * password, visit history, like/unlike (server-rejected without a
+ * profile photo), mutual like = "connected", blocking, reporting,
+ * online status. SQL lives in repositories.
  */
 final class UserController
 {
@@ -57,14 +57,14 @@ final class UserController
             ]);
         }
 
-        // Blocage dans un sens ou dans l'autre → profil indisponible.
+        // Blocking in either direction -> profile unavailable.
         if ($this->blocks->isBlocked($me, $id)) {
             return $this->twig->render($response->withStatus(403), 'user/unavailable.html.twig', [
                 'reason' => 'Ce profil n\'est pas disponible.',
             ]);
         }
 
-        // La consultation est enregistrée (historique de visites du visiteur).
+        // Record the visit (visitor's browsing history).
         $this->visits->record($me, $id);
         $this->notifications->notify($id, 'visit', $me);
 
@@ -99,8 +99,8 @@ final class UserController
             return $this->redirect($response, $back);
         }
 
-        // Exigence du sujet : sans photo de profil, le like est refusé
-        // CÔTÉ SERVEUR (pas seulement masqué dans l'interface).
+        // Spec requirement: without a profile photo, the like is rejected
+        // SERVER-SIDE (not merely hidden in the UI).
         if (!$this->photos->hasProfilePhoto($me)) {
             Flash::set('error', 'Vous devez avoir une photo de profil pour liker un autre profil.');
             return $this->redirect($response, $back);
@@ -111,7 +111,7 @@ final class UserController
             $this->popularity->recompute($id);
 
             if ($this->likes->exists($id, $me)) {
-                // Like mutuel : « connectés », le chat est débloqué.
+                // Mutual like: "connected", chat is unlocked.
                 $this->notifications->notify($id, 'match', $me);
                 $this->notifications->notify($me, 'match', $id);
                 $this->popularity->recompute($me);
@@ -135,9 +135,9 @@ final class UserController
 
         if ($id !== $me) {
             $this->likes->remove($me, $id);
-            // Un unlike est tracé (formule de popularité).
+            // Unlike is tracked (popularity formula).
             $this->likes->recordUnlike($me, $id);
-            // Plus de nouvelles notifications de cet utilisateur + chat coupé (plus de match).
+            // No more notifications from this user + chat cut (no more match).
             $this->notifications->clearUnreadFrom($me, $id);
             $this->notifications->notify($id, 'unlike', $me);
             $this->popularity->recompute($me);
@@ -149,7 +149,7 @@ final class UserController
     }
 
     // -------------------------------------------------------------
-    // Blocage / signalement
+    // Blocking / reporting
     // -------------------------------------------------------------
 
     public function block(Request $request, Response $response, array $args): Response
@@ -160,7 +160,7 @@ final class UserController
 
         if ($id !== $me) {
             $this->blocks->add($me, $id);
-            // Plus de notifications de l'utilisateur bloqué.
+            // Clear pending notifications from the blocked user.
             $this->notifications->clearUnreadFrom($me, $id);
             Flash::set('success', 'Utilisateur bloqué. Il n\'apparaît plus dans vos recherches.');
         }
@@ -205,7 +205,7 @@ final class UserController
     // Helpers
     // -------------------------------------------------------------
 
-    /** Retour sur la page du profil (jamais de redirection externe). */
+    /** Redirect back to the profile page (never external redirects). */
     private function backUrl(Request $request, int $id): string
     {
         $referer = $request->getHeaderLine('Referer');

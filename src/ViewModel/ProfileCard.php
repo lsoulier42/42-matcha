@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\ViewModel;
 
 /**
- * Carte utilisateur universelle : suggestions, recherche avancée,
- * « qui m'a consulté » et « qui m'a liké » (champ date alors renseigné).
+ * Universal user card: suggestions, advanced search,
+ * "who viewed me" and "who liked me" (date field populated when applicable).
  */
 final readonly class ProfileCard
 {

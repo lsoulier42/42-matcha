@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Entité utilisateur (ligne de la table users).
- * Le mot de passe n'est jamais exposé aux vues : utiliser withoutPassword()
- * pour la session, ou UserProfile pour l'affichage.
+ * User entity (row from the users table).
+ * The password is never exposed to views: use withoutPassword()
+ * for the session, or UserProfile for display.
  */
 final readonly class User
 {
@@ -61,7 +61,7 @@ final readonly class User
         );
     }
 
-    /** Version sûre pour la session : le hash du mot de passe est retiré. */
+    /** Safe copy for the session: the password hash is removed. */
     public function withoutPassword(): self
     {
         return new self(

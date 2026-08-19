@@ -16,7 +16,7 @@ final class HomeController
 
     public function index(Request $request, Response $response): Response
     {
-        // Déjà connecté → accueil privé (suggestions).
+        // Already logged in -> redirect to private home (suggestions).
         if (!empty($_SESSION['user_id'])) {
             return $response->withHeader('Location', '/suggestions')->withStatus(302);
         }

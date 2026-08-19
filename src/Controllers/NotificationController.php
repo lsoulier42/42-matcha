@@ -10,9 +10,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Notifications temps réel (section 3.7) : les 5 événements (like,
- * visite, message, match, unlike), compteur global de non-lues,
- * marquage lu après consultation.
+ * Real-time notifications (section 3.7): the 5 events (like,
+ * visit, message, match, unlike), global unread counter,
+ * marked read after viewing.
  */
 final class NotificationController
 {
@@ -26,7 +26,7 @@ final class NotificationController
     {
         $userId = (int) $_SESSION['user_id'];
 
-        // Consultation = marquées comme lues.
+        // Viewing = mark all as read.
         $items = $this->notifications->list($userId);
         $this->notifications->markAllRead($userId);
 

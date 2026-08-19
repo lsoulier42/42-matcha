@@ -11,13 +11,12 @@ use App\Repository\UserRepository;
 use App\Services\MailService;
 
 /**
- * Logique métier d'authentification : vérification d'identifiants,
- * cycle de vie des sessions, jetons à usage unique, flux de
- * réinitialisation de mot de passe.
+ * Authentication business logic: credential verification,
+ * session lifecycle, single-use tokens, password reset flow.
  *
- * Ce service ne gère pas le transport HTTP — le contrôleur reste
- * responsable de l'extraction des données de la requête et de la
- * construction de la réponse.
+ * This service does not handle HTTP transport — the controller
+ * remains responsible for extracting request data and building
+ * the response.
  */
 final class AuthService
 {
@@ -30,11 +29,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Connexion
+    // Login
     // -------------------------------------------------------------
 
     /**
-     * Vérifie les identifiants et les règles d'autorisation du compte.
+     * Verifies credentials and account authorization rules.
      *
      * @return array{ok: bool, user?: User, error?: string}
      */
@@ -56,8 +55,8 @@ final class AuthService
     }
 
     /**
-     * Finalise la connexion : régénère l'identifiant de session,
-     * peuple $_SESSION et met à jour la dernière connexion.
+     * Completes login: regenerates the session id,
+     * populates $_SESSION and updates the last login timestamp.
      */
     public function startSession(User $user): void
     {
@@ -68,11 +67,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Déconnexion
+    // Logout
     // -------------------------------------------------------------
 
     /**
-     * Détruit la session PHP et efface le cookie associé.
+     * Destroys the PHP session and clears the associated cookie.
      */
     public function destroySession(): void
     {
@@ -93,11 +92,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Inscription
+    // Registration
     // -------------------------------------------------------------
 
     /**
-     * Crée le compte, génère le jeton de vérification et envoie l'e-mail.
+     * Creates the account, generates the verification token and sends the email.
      *
      * @return array{ok: bool, email?: string, username?: string, error?: string}
      */
@@ -117,11 +116,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Vérification de l'e-mail
+    // Email verification
     // -------------------------------------------------------------
 
     /**
-     * Valide le jeton de vérification et active le compte.
+     * Validates the verification token and activates the account.
      *
      * @return array{ok: bool, message: string}
      */
@@ -146,12 +145,12 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Mot de passe oublié
+    // Forgotten password
     // -------------------------------------------------------------
 
     /**
-     * Envoie un e-mail de réinitialisation si le compte existe.
-     * Retourne toujours le même message pour éviter l'énumération.
+     * Sends a reset email if the account exists.
+     * Always returns the same message to prevent user enumeration.
      */
     public function requestPasswordReset(string $email): void
     {
@@ -166,11 +165,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Réinitialisation de mot de passe
+    // Password reset
     // -------------------------------------------------------------
 
     /**
-     * Vérifie qu'un jeton de réinitialisation est valide.
+     * Checks whether a reset token is valid.
      */
     public function validateResetToken(string $token): bool
     {
@@ -178,7 +177,7 @@ final class AuthService
     }
 
     /**
-     * Valide le nouveau mot de passe et effectue la réinitialisation.
+     * Validates the new password and performs the reset.
      *
      * @return array{ok: bool, errors?: array<string, string>}
      */
@@ -211,11 +210,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Session (lecture)
+    // Session (read)
     // -------------------------------------------------------------
 
     /**
-     * Vérifie si un utilisateur est connecté.
+     * Checks whether a user is logged in.
      */
     public function isLoggedIn(): bool
     {
@@ -223,11 +222,11 @@ final class AuthService
     }
 
     // -------------------------------------------------------------
-    // Tokens (interne)
+    // Tokens (internal)
     // -------------------------------------------------------------
 
     /**
-     * Génère un jeton à usage unique et le stocke en base.
+     * Generates a single-use token and stores it in the database.
      */
     private function createToken(int $userId, string $type): string
     {

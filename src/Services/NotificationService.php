@@ -7,9 +7,9 @@ namespace App\Services;
 use App\Repository\NotificationRepository;
 
 /**
- * Notifications temps réel (section 3.7) : like reçu, visite de profil,
- * message reçu, like en retour (match), unlike. Le délai de réception
- * (≤ 10 s) est assuré par le polling AJAX — voir /api/poll.
+ * Real-time notifications (section 3.7): like received, profile visit,
+ * message received, like back (match), unlike. The delivery latency
+ * (≤ 10 s) is guaranteed by AJAX polling — see /api/poll.
  */
 final class NotificationService
 {
@@ -17,7 +17,7 @@ final class NotificationService
     {
     }
 
-    /** Crée une notification pour $userId (actorId = l'auteur de l'événement). */
+    /** Creates a notification for $userId (actorId = the event actor). */
     public function notify(int $userId, string $type, ?int $actorId = null): void
     {
         if ($userId === $actorId) {
@@ -26,28 +26,28 @@ final class NotificationService
         $this->notifications->create($userId, $type, $actorId);
     }
 
-    /** Nombre de notifications non lues. */
+    /** Unread notification count. */
     public function unreadCount(int $userId): int
     {
         return $this->notifications->unreadCount($userId);
     }
 
-    /** Marque toutes les notifications comme lues. */
+    /** Marks all notifications as read. */
     public function markAllRead(int $userId): void
     {
         $this->notifications->markAllRead($userId);
     }
 
     /**
-     * Liste des notifications récentes, avec l'auteur.
-     * Les notifications d'utilisateurs bloqués sont exclues.
+     * Recent notifications list, with the actor.
+     * Notifications from blocked users are excluded.
      */
     public function list(int $userId, int $limit = 50): array
     {
         return $this->notifications->list($userId, $limit);
     }
 
-    /** Supprime les notifications non lues d'un acteur donné (unlike/blocage). */
+    /** Deletes unread notifications from a given actor (unlike/block). */
     public function clearUnreadFrom(int $userId, int $actorId): void
     {
         $this->notifications->clearUnreadFrom($userId, $actorId);

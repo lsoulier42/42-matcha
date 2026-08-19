@@ -9,9 +9,9 @@ use App\Entity\User;
 use App\ViewModel\MapMarker;
 
 /**
- * Accès aux données des utilisateurs. Toutes les requêtes passent par
- * la mini-lib Query (prepared statements) — pas d'ORM, conformément au sujet.
- * Les lignes SQL sont mappées en entités (User) ou ViewModels (MapMarker).
+ * User data access. All queries go through the mini-lib Query
+ * (prepared statements) — no ORM, per the spec.
+ * SQL rows are mapped to entities (User) or ViewModels (MapMarker).
  */
 final class UserRepository
 {
@@ -51,7 +51,7 @@ final class UserRepository
         return $row === null ? null : User::fromRow($row);
     }
 
-    /** Existe-t-il un utilisateur avec cet e-mail (hors $excludeId éventuel) ? */
+    /** Does a user with this email exist (excluding $excludeId if given)? */
     public function emailExists(string $email, ?int $excludeId = null): bool
     {
         $sql = 'SELECT id FROM users WHERE email = ?';
@@ -88,7 +88,7 @@ final class UserRepository
         $this->db->update('users', ['email_verifie' => 1], 'id = ?', [$id]);
     }
 
-    /** Position GPS d'un utilisateur (marqueur « vous » de la carte). */
+    /** GPS position for a user (the "you" marker on the map). */
     public function findWithPosition(int $id): ?MapMarker
     {
         $row = $this->db->fetch('SELECT id, prenom, lat, lng FROM users WHERE id = ?', [$id]);
@@ -98,7 +98,7 @@ final class UserRepository
         return MapMarker::fromRow($row);
     }
 
-    /** Positions GPS des ids donnés (marqueurs de la carte). */
+    /** GPS positions for the given IDs (map markers). */
     public function findPositionsByIds(array $ids): array
     {
         if ($ids === []) {
@@ -119,12 +119,12 @@ final class UserRepository
     }
 
     /**
-     * Candidats aux suggestions : conditions (construites par le service),
-     * photo de profil et nombre de tags partagés avec l'utilisateur courant.
+     * Suggestion candidates: conditions (built by the service),
+     * profile photo and count of tags shared with the current user.
      *
-     * @param string[] $where conditions SQL (fusionnées par AND)
-     * @return array<array<string, mixed>> lignes brutes (le service applique
-     *         l'orientation, le score et le tri avant mapping ProfileCard)
+     * @param string[] $where SQL conditions (joined by AND)
+     * @return array<array<string, mixed>> raw rows (the service applies
+     *         orientation, scoring and sorting before mapping to ProfileCard)
      */
     public function suggestCandidates(array $where, array $params, array $myTagIds): array
     {

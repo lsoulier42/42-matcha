@@ -11,9 +11,9 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use Slim\Psr7\Response as SlimResponse;
 
 /**
- * Protection CSRF maison : jeton généré en session et exigé
- * sur toute requête qui modifie l'état (POST/PUT/PATCH/DELETE).
- * Accepté via champ de formulaire « csrf_token » ou en-tête X-CSRF-Token (AJAX).
+ * Custom CSRF protection: token generated in session and required
+ * on every state-changing request (POST/PUT/PATCH/DELETE).
+ * Accepted via "csrf_token" form field or X-CSRF-Token header (AJAX).
  */
 final class CsrfMiddleware implements MiddlewareInterface
 {

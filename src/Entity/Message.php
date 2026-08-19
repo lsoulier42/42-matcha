@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Message du chat. toApiArray() fournit le format JSON du polling
- * (clés identiques à celles attendues par le client).
+ * Chat message. toApiArray() provides the JSON format for polling
+ * (keys match those expected by the client).
  */
 final readonly class Message
 {
@@ -30,7 +30,7 @@ final readonly class Message
         );
     }
 
-    /** Format JSON du polling AJAX (inchangé pour le client). */
+    /** JSON format for AJAX polling (unchanged for the client). */
     public function toApiArray(): array
     {
         return [

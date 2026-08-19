@@ -7,11 +7,11 @@ namespace App\Dto;
 use DateTimeImmutable;
 
 /**
- * Planification d'un rendez-vous normalisée (POST /appointments).
- * `startAtRaw` conserve la saisie brute (datetime-local) pour distinguer
- * « champ vide » de « date invalide » à la validation ; `startAt` est la
- * valeur déjà parsée, garantie non-null après validation (toRecord est
- * appelé uniquement sur un DTO validé).
+ * Normalised appointment scheduling data (POST /appointments).
+ * `startAtRaw` keeps the raw input (datetime-local) so that "empty field"
+ * can be distinguished from "invalid date" during validation; `startAt`
+ * is the parsed value, guaranteed non-null after validation (toRecord is
+ * only called on a validated DTO).
  */
 final readonly class AppointmentData
 {
@@ -42,7 +42,7 @@ final readonly class AppointmentData
         );
     }
 
-    /** Ligne à insérer dans la table appointments ($user1Id vient de la session). */
+    /** Row to insert into the appointments table ($user1Id comes from the session). */
     public function toRecord(int $user1Id): array
     {
         return [

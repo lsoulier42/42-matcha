@@ -11,8 +11,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Navigation par profils suggérés (section 3.3) : suggestions
- * intelligentes, liste triable et filtrable.
+ * Suggested profiles navigation (section 3.3): smart suggestions,
+ * sortable and filterable list.
  */
 final class SuggestController
 {
@@ -46,7 +46,7 @@ final class SuggestController
         ]);
     }
 
-    /** Filtres acceptés : age_min, age_max, popularity_min, ville, tags[]. */
+    /** Accepted filters: age_min, age_max, popularity_min, ville, tags[]. */
     private function filters(array $params): array
     {
         return [

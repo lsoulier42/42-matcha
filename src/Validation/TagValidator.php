@@ -7,10 +7,10 @@ namespace App\Validation;
 use App\Repository\TagRepository;
 
 /**
- * Règles des tags réutilisables : format du nom et limite de 20 tags
- * par utilisateur (règles extraites de ProfileController::addTag).
+ * Reusable tag rules: name format and 20-tag limit per user
+ * (rules extracted from ProfileController::addTag).
  *
- * @return array<string, string> erreurs (champ => message), vide si valide
+ * @return array<string, string> errors (field => message), empty if valid
  */
 final class TagValidator
 {

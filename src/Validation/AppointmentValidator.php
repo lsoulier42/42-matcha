@@ -8,10 +8,10 @@ use App\Dto\AppointmentData;
 use App\Services\MessageService;
 
 /**
- * Règles de planification d'un rendez-vous (bonus) : titre, date dans
- * le futur, destinataire connecté (like mutuel, sans blocage).
+ * Appointment scheduling rules (bonus): title, future date,
+ * matched recipient (mutual like, no block).
  *
- * @return array<string, string> erreurs (champ => message), vide si valide
+ * @return array<string, string> errors (field => message), empty if valid
  */
 final class AppointmentValidator
 {

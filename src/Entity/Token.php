@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 /**
- * Jeton à usage unique (vérification d'e-mail / réinitialisation).
+ * Single-use token (email verification / password reset).
  */
 final readonly class Token
 {

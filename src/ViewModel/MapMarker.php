@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\ViewModel;
 
 /**
- * Marqueur de la carte interactive. toArray() fournit le JSON attendu
- * par le client Leaflet (clés snake_case inchangées).
+ * Interactive map marker. toArray() provides the JSON expected by
+ * the Leaflet client (snake_case keys unchanged).
  */
 final readonly class MapMarker
 {

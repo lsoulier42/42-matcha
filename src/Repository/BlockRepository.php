@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Db\Query;
 
 /**
- * Blocages entre utilisateurs (les deux sens sont considérés).
+ * User blocks (both directions are considered).
  */
 final class BlockRepository
 {
@@ -15,7 +15,7 @@ final class BlockRepository
     {
     }
 
-    /** Un blocage existe-t-il dans un sens ou dans l'autre ? */
+    /** Does a block exist in either direction? */
     public function isBlocked(int $userId, int $otherId): bool
     {
         return $this->db->value(
@@ -35,7 +35,7 @@ final class BlockRepository
         $this->db->delete('blocks', 'blocker_id = ? AND blocked_id = ?', [$blockerId, $blockedId]);
     }
 
-    /** Ids des utilisateurs bloqués avec $userId (dans les deux sens). */
+    /** IDs of users blocked with $userId (both directions). */
     public function idsInvolving(int $userId): array
     {
         $rows = $this->db->fetchAll(

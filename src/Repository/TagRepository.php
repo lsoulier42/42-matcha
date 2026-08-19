@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\Entity\Tag;
 
 /**
- * Tags réutilisables (intérêts partagés) et liaison user_tags.
+ * Reusable tags (shared interests) and user_tags join table.
  */
 final class TagRepository
 {
@@ -28,14 +28,14 @@ final class TagRepository
         return $this->db->lastInsertId();
     }
 
-    /** Tous les noms de tags (ordre alphabétique). */
+    /** All tag names (alphabetical order). */
     public function all(): array
     {
         $rows = $this->db->fetchAll('SELECT name FROM tags ORDER BY name ASC');
         return array_column($rows, 'name');
     }
 
-    /** Autocomplétion : 10 premiers tags commençant par $q. */
+    /** Autocomplete: first 10 tags starting with $q. */
     public function search(string $q): array
     {
         if ($q === '') {
@@ -58,7 +58,7 @@ final class TagRepository
         return array_map(static fn (array $row): Tag => Tag::fromRow($row), $rows);
     }
 
-    /** Ids des tags d'un utilisateur. */
+    /** Tag IDs for a user. */
     public function idsForUser(int $userId): array
     {
         $rows = $this->db->fetchAll('SELECT tag_id FROM user_tags WHERE user_id = ?', [$userId]);

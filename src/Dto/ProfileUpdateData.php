@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Dto;
 
 /**
- * Mise à jour de profil normalisée, issue du formulaire (POST /profile).
- * Les champs optionnels vides (`orientation`, `bio`, `birthdate`) sont null.
+ * Normalised profile update data from the form (POST /profile).
+ * Empty optional fields (`orientation`, `bio`, `birthdate`) are null.
  */
 final readonly class ProfileUpdateData
 {
@@ -34,7 +34,7 @@ final readonly class ProfileUpdateData
         );
     }
 
-    /** Colonnes à mettre à jour dans la table users. */
+    /** Columns to update in the users table. */
     public function toRecord(): array
     {
         return [

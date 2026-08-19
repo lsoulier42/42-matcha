@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /*
- * Applique database/schema.sql (idempotent : CREATE TABLE IF NOT EXISTS).
- * Usage : docker compose exec web php scripts/migrate.php
+ * Applies database/schema.sql (idempotent: CREATE TABLE IF NOT EXISTS).
+ * Usage: docker compose exec web php scripts/migrate.php
  */
 
 require __DIR__ . '/../vendor/autoload.php';

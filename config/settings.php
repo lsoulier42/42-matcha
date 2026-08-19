@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /*
- * Configuration centrale de l'application, lue depuis .env.
- * Chargée par le conteneur php-di (définition 'settings').
+ * Central application configuration, read from .env.
+ * Loaded by the php-di container (definition 'settings').
  */
 
 $rootDir = dirname(__DIR__);
@@ -33,7 +33,7 @@ return [
             'cache' => $isDev ? false : $rootDir . '/var/cache/twig',
             'debug' => $isDev,
             'auto_reload' => true,
-            // En dev, toute variable Twig manquante est une erreur (chasse les notices).
+            // In dev, any missing Twig variable is an error (catches notices).
             'strict_variables' => true,
         ],
     ],
@@ -41,12 +41,12 @@ return [
     'session' => [
         'name' => 'matcha_session',
         'lifetime' => 7 * 86400,
-        'secure' => false, // passer à true derrière HTTPS
+        'secure' => false, // set to true behind HTTPS
     ],
 
     'uploads' => [
         'dir' => $rootDir . '/public/assets/uploads',
-        'max_size' => 5 * 1024 * 1024, // 5 Mo
+        'max_size' => 5 * 1024 * 1024, // 5 MB
         'max_photos' => 5,
         'allowed' => [
             'image/jpeg' => 'jpg',
@@ -66,11 +66,11 @@ return [
     ],
 
     'realtime' => [
-        'poll_interval' => 5, // secondes (contrainte : réception <= 10 s)
+        'poll_interval' => 5, // seconds (constraint: delivery <= 10 s)
     ],
 
     'matching' => [
-        'zone_radius_km' => 10, // « même zone géographique »
+        'zone_radius_km' => 10, // "same geographic zone"
         'max_results' => 60,
     ],
 ];

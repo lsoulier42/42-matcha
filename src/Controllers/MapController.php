@@ -13,9 +13,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\Twig;
 
 /**
- * Bonus : carte interactive des utilisateurs (Leaflet + tuiles OSM).
- * Affiche les profils suggérés (même algorithme que /suggestions)
- * ayant une position GPS connue, plus la position de l'utilisateur.
+ * Bonus: interactive user map (Leaflet + OSM tiles).
+ * Displays suggested profiles (same algorithm as /suggestions)
+ * that have a known GPS position, plus the current user's position.
  */
 final class MapController
 {

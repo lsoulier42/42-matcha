@@ -8,7 +8,7 @@ use App\Db\Query;
 use App\ViewModel\ProfileCard;
 
 /**
- * Historique des visites de profils (dernière visite par paire).
+ * Profile visit history (last visit per pair).
  */
 final class VisitRepository
 {
@@ -16,7 +16,7 @@ final class VisitRepository
     {
     }
 
-    /** Enregistre (ou met à jour) la visite d'un profil. */
+    /** Records (or updates) a profile visit. */
     public function record(int $visitorId, int $visitedId): void
     {
         $this->db->run(
@@ -27,7 +27,7 @@ final class VisitRepository
         );
     }
 
-    /** « Qui a consulté mon profil » : cartes des visiteurs. */
+    /** "Who viewed my profile": visitor cards. */
     public function listVisitors(int $visitedId): array
     {
         $rows = $this->db->fetchAll(

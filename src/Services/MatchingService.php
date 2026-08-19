@@ -11,25 +11,26 @@ use App\Repository\UserRepository;
 use App\ViewModel\ProfileCard;
 
 /**
- * Algorithme de suggestions « intelligentes » (section 3.3 du sujet).
+ * "Smart" suggestion algorithm (section 3.3 of the spec).
  *
- * Compatibilité d'orientation (croisée) :
- *   - orientation NULL = bisexuel par défaut (règle du sujet) ;
- *   - hetero → genre opposé, homo → même genre, bi → tous ;
- *   - genre « autre » : seul un profil bi/NULL accepte ce genre.
- * Un profil est suggéré si MOI je peux être intéressé par lui ET
- * que LUI peut être intéressé par moi.
+ * Orientation compatibility (cross-checked):
+ *   - NULL orientation = bisexual by default (spec rule);
+ *   - hetero → opposite gender, homo → same gender, bi → all;
+ *   - "other" gender: only bi/NULL profiles accept that gender.
+ * A profile is suggested if I could be interested in them AND
+ * they could be interested in me.
  *
- * Score (plus élevé = plus pertinent) :
- *   1. Même zone géographique (distance < 10 km ou même ville) : +100 ;
- *   2. Tags partagés : +2 par tag ;
- *   3. Note de popularité : + note (0–10).
+ * Score (higher = more relevant):
+ *   1. Same geographic zone (< 10 km or same city): +100;
+ *   2. Shared tags: +2 per tag;
+ *   3. Popularity score: + score (0–10).
  *
- * Exclusions : soi-même, comptes inactifs/non vérifiés, bloqués des deux côtés.
+ * Exclusions: self, inactive/unverified accounts, blocked in both
+ * directions.
  *
- * Le SQL est centralisé dans UserRepository::suggestCandidates ; ce service
- * construit les critères, applique la compatibilité d'orientation, le score
- * et le tri.
+ * SQL is centralised in UserRepository::suggestCandidates; this service
+ * builds the criteria, applies orientation compatibility, scoring
+ * and sorting.
  */
 final class MatchingService
 {
@@ -75,7 +76,7 @@ final class MatchingService
         return array_map(static fn (array $row): ProfileCard => ProfileCard::fromRow($row), $sorted);
     }
 
-    /** Critère obligatoire du sujet : orientation non renseignée = bisexuel. */
+    /** Mandatory spec rule: unset orientation = bisexual. */
     private function orientationCompatible(User $me, array $other): bool
     {
         if (!$this->covers($me->orientation, $me->genre, $other['genre'] ?? null)) {
@@ -87,19 +88,19 @@ final class MatchingService
         return true;
     }
 
-    /** $orientation couvre-t-elle le genre $target ? (NULL = bi) */
+    /** Does $orientation cover the $target genre? (NULL = bi) */
     private function covers(?string $orientation, ?string $ownGenre, ?string $targetGenre): bool
     {
         if ($targetGenre === null || $targetGenre === 'autre' || $orientation === null || $orientation === 'bi') {
-            return $targetGenre !== null; // genre inconnu → pas de suggestion
+            return $targetGenre !== null; // unknown gender → no suggestion
         }
         if ($ownGenre === null || $ownGenre === 'autre') {
-            return false; // sans genre, hetero/homo ne peuvent pas matcher
+            return false; // without a gender, hetero/homo cannot match
         }
         return $orientation === 'homo' ? $ownGenre === $targetGenre : $ownGenre !== $targetGenre;
     }
 
-    /** Construction WHERE + paramètres (filtres : âge, popularité, ville, tags). */
+    /** Builds WHERE clause + parameters (filters: age, popularity, city, tags). */
     private function buildWhere(User $me, array $filters, array $blockedIds): array
     {
         $where = ['u.id <> ?', 'u.actif = 1', 'u.email_verifie = 1'];
@@ -110,7 +111,7 @@ final class MatchingService
             $params = [...$params, ...$blockedIds];
         }
 
-        // Tranche d'âge (conversion âge → date de naissance).
+        // Age range (convert age → birthdate).
         $ageMin = isset($filters['age_min']) && $filters['age_min'] !== '' ? max(16, min(100, (int) $filters['age_min'])) : null;
         $ageMax = isset($filters['age_max']) && $filters['age_max'] !== '' ? max(16, min(100, (int) $filters['age_max'])) : null;
         if ($ageMin !== null) {
@@ -122,7 +123,7 @@ final class MatchingService
             $params[] = date('Y-m-d', (int) (time() - ($ageMax + 1) * 365.25 * 86400));
         }
 
-        // Popularité minimale.
+        // Minimum popularity.
         $popMin = isset($filters['popularity_min']) && $filters['popularity_min'] !== ''
             ? max(0, min(10, (float) $filters['popularity_min'])) : null;
         if ($popMin !== null) {
@@ -130,14 +131,14 @@ final class MatchingService
             $params[] = $popMin;
         }
 
-        // Localisation (ville / quartier).
+        // Location (city / district).
         $ville = isset($filters['ville']) ? trim((string) $filters['ville']) : '';
         if ($ville !== '') {
             $where[] = 'u.ville LIKE ?';
             $params[] = '%' . mb_substr($ville, 0, 120) . '%';
         }
 
-        // Tags : au moins un tag commun parmi ceux demandés.
+        // Tags: at least one common tag among those requested.
         $tagNames = [];
         foreach ((array) ($filters['tags'] ?? []) as $tag) {
             $tag = mb_strtolower(trim((string) $tag));
@@ -154,10 +155,10 @@ final class MatchingService
             $params = [...$params, ...$tagNames];
         }
 
-        return [$where, $params]; // fusionné par le repository (AND)
+        return [$where, $params]; // merged by the repository (AND)
     }
 
-    /** Distance Haversine en km (null si coordonnées manquantes). */
+    /** Haversine distance in km (null if coordinates missing). */
     private function distanceKm(User $a, array $b): ?float
     {
         if ($a->lat === null || $a->lng === null || $b['lat'] === null || $b['lng'] === null) {
@@ -171,7 +172,7 @@ final class MatchingService
         return round(6371.0 * 2 * atan2(sqrt($h), sqrt(1 - $h)), 1);
     }
 
-    /** Même zone : < 10 km ou même ville (insensible à la casse). */
+    /** Same zone: < 10 km or same city (case-insensitive). */
     private function sameZone(User $a, array $b): bool
     {
         $dist = $this->distanceKm($a, $b);
@@ -191,7 +192,7 @@ final class MatchingService
         return $dt === false ? null : (int) $dt->diff(new \DateTimeImmutable('now'))->y;
     }
 
-    /** Tri : score (défaut), âge, localisation, popularité, tags communs. */
+    /** Sorting: score (default), age, location, popularity, shared tags. */
     private function sort(array $rows, string $sort): array
     {
         switch ($sort) {

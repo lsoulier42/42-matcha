@@ -17,8 +17,8 @@ use App\Middleware\AuthMiddleware;
 use Slim\App;
 
 /*
- * Définition de toutes les routes de l'application.
- * Les contrôleurs sont résolus par le conteneur php-di (autowiring).
+ * Application route definitions.
+ * Controllers are resolved by the php-di container (autowiring).
  */
 return static function (App $app): void {
     // Public
@@ -36,10 +36,10 @@ return static function (App $app): void {
         $app->post('/reset/{token}', [AuthController::class, 'reset']);
     });
 
-    // Déconnexion : POST protégé CSRF, « en un clic » depuis le layout.
+    // Logout: CSRF-protected POST, "one-click" from the layout.
     $app->post('/logout', [AuthController::class, 'logout']);
 
-    // ---------- Privé (session requise) ----------
+    // ---------- Private (session required) ----------
     $app->group('', function ($app): void {
         $app->get('/profile', [ProfileController::class, 'show']);
         $app->post('/profile', [ProfileController::class, 'update']);
@@ -55,11 +55,11 @@ return static function (App $app): void {
         $app->get('/profile/visits', [ProfileController::class, 'visits']);
         $app->get('/profile/likes', [ProfileController::class, 'likes']);
 
-        // Suggestions intelligentes + recherche avancée
+        // Smart suggestions + advanced search
         $app->get('/suggestions', [SuggestController::class, 'index']);
         $app->get('/search', [SearchController::class, 'index']);
 
-        // Consultation de profil : like/unlike, blocage, signalement
+        // Profile viewing: like/unlike, blocking, reporting
         $app->get('/user/{id}', [UserController::class, 'show']);
         $app->post('/user/{id}/like', [UserController::class, 'like']);
         $app->post('/user/{id}/unlike', [UserController::class, 'unlike']);
@@ -67,25 +67,25 @@ return static function (App $app): void {
         $app->post('/user/{id}/unblock', [UserController::class, 'unblock']);
         $app->post('/user/{id}/report', [UserController::class, 'report']);
 
-        // Chat temps réel (réservé aux matchs)
+        // Real-time chat (restricted to matches)
         $app->get('/messages', [ChatController::class, 'index']);
         $app->get('/messages/{id}', [ChatController::class, 'show']);
         $app->post('/messages/{id}', [ChatController::class, 'send']);
 
-        // Notifications temps réel (les 5 événements)
+        // Real-time notifications (the 5 events)
         $app->get('/notifications', [NotificationController::class, 'index']);
 
-        // Bonus : carte interactive + rendez-vous entre matchés
+        // Bonus: interactive map + appointments between matches
         $app->get('/map', [MapController::class, 'index']);
         $app->get('/appointments', [AppointmentController::class, 'index']);
         $app->post('/appointments', [AppointmentController::class, 'create']);
         $app->post('/appointments/{id}/delete', [AppointmentController::class, 'delete']);
 
-        // Polling AJAX : badges globaux + fil de chat ouvert
+        // AJAX polling: global badges + open chat thread
         $app->get('/api/poll', [ApiController::class, 'poll']);
         $app->get('/api/messages/{id}', [ChatController::class, 'apiHistory']);
 
-        // Autocomplétion des tags existants (AJAX)
+        // Existing tag autocomplete (AJAX)
         $app->get('/api/tags', [ProfileController::class, 'apiTags']);
     })->add(AuthMiddleware::class);
 };

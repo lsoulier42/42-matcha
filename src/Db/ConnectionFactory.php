@@ -7,8 +7,8 @@ namespace App\Db;
 use PDO;
 
 /**
- * Création de la connexion PDO unique de l'application.
- * Requêtes préparées natives (anti-SQLi), erreurs en exceptions.
+ * Creates the application's single PDO connection.
+ * Native prepared statements (anti-SQLi), errors as exceptions.
  */
 final class ConnectionFactory
 {
