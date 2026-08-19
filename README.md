@@ -105,6 +105,151 @@ scripts/           # migrate.php, seed.php
 docker/            # Dockerfile php-apache, php.ini, vhost
 ```
 
+## 🏗️ Architecture
+
+Ce projet adopte une **architecture en couches** (layered architecture) organisée selon le principe de séparation des préoccupations. Chaque couche a une responsabilité unique et communique uniquement avec la couche adjacent.
+
+### Vue d'ensemble
+
+```
+┌─────────────────────────────────────────────────────┐
+│  HTTP (Slim 4)                                      │
+│  Routes → Controllers → Middleware PSR-15           │
+├─────────────────────────────────────────────────────┤
+│  Couche applicative                                 │
+│  Services (logique métier) · Validators (règles)   │
+├─────────────────────────────────────────────────────┤
+│  Couche données                                     │
+│  Repositories (SQL) · Db\Query (mini-lib PDO)      │
+├─────────────────────────────────────────────────────┤
+│  Couche présentation                                │
+│  Twig templates ← ViewModels (données typées)      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Slim 4 comme micro-framework
+
+Slim 4 fournit uniquement le **routeur** et l'**infrastructure HTTP** (PSR-7/PSR-15). Tout le reste — ORM, authentification, validation, templating — est either absent du framework ou intégré manuellement, ce qui impose une architecture propre :
+
+- **Entrée unique** (`public/index.php`) : bootstrap du conteneur DI, empilement des middlewares, chargement des routes.
+- **Routes déclaratives** (`routes.php`) : regroupées publique / privée (`AuthMiddleware`), résolution des contrôleurs par le conteneur DI.
+- **Middlewares en oignon** : Session → CSRF → ViewGlobals → Routing → BodyParsing → Error.
+
+### Inversion de dépendances (PHP-DI)
+
+Le conteneur [php-di](https://php-di.org/) gère l'injection de dépendances par réflexion (autowiring) complétée par des définitions explicites pour les classes nécessitant de la configuration scalaire :
+
+```php
+// config/definitions.php — wiring explicite pour les services
+MatchingService::class => static function (Container $c): MatchingService {
+    return new MatchingService(
+        $c->get(UserRepository::class),
+        $c->get(TagRepository::class),
+        $c->get(BlockRepository::class),
+        $c->get('settings')
+    );
+},
+```
+
+Les contrôleurs, validators et repositories simples sont résolus automatiquement par autowiring. Les classes recevant des tableaux de config (services, controllers complexes) sont explicitement déclarées.
+
+### Principes SOLID appliqués
+
+| Principe | Application concrète |
+|---|---|
+| **S** — Single Responsibility | Chaque classe a **une seule raison de changer** : les contrôleurs gèrent le HTTP, les services la logique métier, les repositories le SQL, les DTOs la normalisation des entrées, les ViewModels la mise en forme des vues. |
+| **O** — Open/Closed | L'architecture est ouverte à l'extension sans modification du code existant : un nouveau domaine (ex. Appointment) s'ajoute avec son controller + service + repository + DTO sans toucher aux modules existants. |
+| **L** — Liskov Substitution | Les middlewares implémentent `Psr\Http\Server\MiddlewareInterface`, les contrôleurs implémentent la signature PSR-15 `__invoke(Request, Response, $args)` — intercompatibilité garantie par le contrat PSR. |
+| **I** — Interface Segregation | Pas d'interfaces domaine surdimensionnées : chaque classe dépend uniquement des méthodes qu'elle utilise concrètement. Les contracts PSR (Request, Response, MiddlewareInterface) suffisent pour l'interopérabilité. |
+| **D** — Dependency Inversion | Les contrôleurs dépendent des services et repositories, jamais de PDO directement. Les services dépendent des repositories (couche données abstraite). Le conteneur DI assemble le tout. |
+
+### Patterns architecturaux
+
+#### Contrôleurs fins (Thin Controllers)
+
+Les contrôleurs sont des **adaptateurs HTTP** : ils extraient les données de la requête, déléguent au service/repository, et construisent la réponse (rendu Twig ou redirection). Aucune logique métier dans un controller.
+
+```php
+// AuthController —典型的ement mince
+final class AuthController {
+    public function __construct(
+        private Twig $twig,
+        private UserRepository $users,
+        private AuthService $auth,
+        private RegisterValidator $registerValidator,
+    ) {}
+
+    public function register(Request $request, Response $response): Response {
+        $data = RegisterData::fromRequest((array) $request->getParsedBody());
+        $errors = $this->registerValidator->validate($this->users, $data);
+        if ($errors !== []) { /* render with errors */ }
+        $result = $this->auth->register($data);
+        /* flash + redirect */
+    }
+}
+```
+
+#### Repository Pattern
+
+Chaque table de la base a un **repository dédié** qui encapsule toutes les requêtes SQL. Les requêtes sont préparées systématiquement (`prepared statements`). La mini-lib `Db\Query` fournit des helpers (`fetch`, `insert`, `update`) mais chaque repository écrit son propre SQL — pas de query builder abstrait.
+
+#### Service Layer
+
+Les services contiennent la **logique métier pure** — sans conscience du HTTP ni du SQL. Ils coordonnent plusieurs repositories et implémentent les règles de l'algorithme (suggestions, popularité, messagerie).
+
+Exemple : `MatchingService` orchestre `UserRepository`, `TagRepository` et `BlockRepository` pour calculer le score de compatibilité (zone géographique, tags partagés, popularité) et appliquer la compatibilité d'orientation.
+
+#### DTO (Data Transfer Objects)
+
+Les DTOs `final readonly class` normalisent les données de formulaire via un constructeur statique `fromRequest(array $body)`. Ils isolent le controller du format brut de la requête et gèrent le trimming, le cast typé et le hachage des mots de passe.
+
+```php
+final readonly class RegisterData {
+    public static function fromRequest(array $body): self { /* trim, cast */ }
+    public function toRecord(): array { /* hash password, return row */ }
+}
+```
+
+#### ViewModel Pattern
+
+Les ViewModels (`ProfileCard`, `UserProfile`, `Conversation`…) façonnent les données **spécifiquement pour les vues**. Ils calculent les valeurs d'affichage (âge, temps relatif, formatage de popularité) pour que les templates Twig restent simples et sans logique.
+
+#### Validation métier
+
+Un validateur par domaine (`RegisterValidator`, `ProfileValidator`…) hérite d'un `Validator` fluide de base qui accumule les erreurs par champ. Les règles métier (unicité, plage d'âge, enums) sont centralisées dans les validateurs, pas dans les contrôleurs.
+
+### Flux de données complet
+
+```
+Requête HTTP
+  ↓
+Middleware (Session, CSRF, Auth)
+  ↓
+Route → Controller (extraction via DTO)
+  ↓
+Validator (règles métier)
+  ↓
+Service (logique + coordination)
+  ↓
+Repository (SQL préparé)
+  ↓
+Db\Query → PDO → MySQL
+  ↓
+Entity / ViewModel (typage des résultats)
+  ↓
+Controller → Twig (rendu) → Réponse HTTP
+```
+
+### Pourquoi pas d'ORM ?
+
+Le projet utilise des **requêtes SQL écrites à la main** plutôt qu'un ORM (Doctrine, Eloquent) pour trois raisons :
+
+1. **Transparence** : chaque requête est visible, compréhensible et optimisable directement — pas de couche d'abstraction cachée.
+2. **Contrôle total** : les Jointures complexes (suggestions avec score calculé, tags partagés, distance géographique) sont plus simples en SQL brut.
+3. **Poids minimal** : Slim est un micro-framework ; y ajouter un ORM lourd contredit la philosophie du projet.
+
+Le compromis est la mini-lib `Db\Query` qui factorise les opérations CRUD répétitives tout en gardant le SQL explicite.
+
 ## 🎁 Bonus
 
 1. **Galerie photo** : téléchargement par glisser-déposer + édition d'image GD (rotation, filtres N&B/sépia/négatif/flou, recadrage)
