@@ -21,8 +21,8 @@
 | Domaine | Détails |
 |---|---|
 | **Authentification** | Inscription (email, username, nom, prénom), vérification par e-mail à lien unique, connexion, mot de passe oublié, déconnexion en un clic. Mots de passe anglais courants refusés (blacklist) + exigence de complexité |
-| **Profils** | Genre, préférences sexuelles, biographie, tags réutilisables avec autocomplétion, jusqu'à 5 photos (une photo de profil), note de popularité publique, localisation GPS avec **consentement explicite** (RGPD) ou saisie manuelle |
-| **Suggestions intelligentes** | Compatibilité d'orientation croisée (bisexuel par défaut), même zone géographique prioritaire, tags partagés, popularité — liste triable et filtrable (âge, localisation, popularité, tags) |
+| **Profils** | Genre (choix inclusif : Homme, Femme, Non binaire, Agenre, Xénogenre, Genre fluide…), orientation sexuelle (Hétéro, Gay, Lesbienne, Bi, Pan, Asexuel…), biographie, tags réutilisables avec autocomplétion, jusqu'à 5 photos (une photo de profil), note de popularité publique, localisation GPS avec **consentement explicite** (RGPD) ou saisie manuelle |
+| **Suggestions intelligentes** | Compatibilité d'orientation croisée (non renseigné = ouvert·e à tous), même zone géographique prioritaire, tags partagés, popularité — liste triable et filtrable (âge, localisation, popularité, tags) |
 | **Recherche avancée** | Critères combinés : tranche d'âge, plage de popularité, localisation, un ou plusieurs tags |
 | **Consultation de profil** | Toutes les infos sauf email/mot de passe, historique de visites, like (refusé côté serveur sans photo de profil), like mutuel = « connectés », unlike, blocage, signalement, statut en ligne |
 | **Chat temps réel** | Réservé aux utilisateurs connectés, réception **≤ 10 s** (polling 5 s), badge global de nouveaux messages sur toutes les pages |

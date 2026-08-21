@@ -15,8 +15,12 @@ use App\Repository\UserRepository;
  */
 final class ProfileValidator
 {
-    private const GENRES = ['homme', 'femme', 'autre'];
-    private const ORIENTATIONS = ['hetero', 'homo', 'bi'];
+    private const GENRES = [
+        'homme', 'femme', 'non-binaire', 'agenre', 'xénogenre', 'genre-fluide', 'autre',
+    ];
+    private const ORIENTATIONS = [
+        'hetero', 'homo', 'gay', 'lesbienne', 'bi', 'pan', 'asexuel', 'demisexuel', 'questionnement', 'autre',
+    ];
 
     public function validate(UserRepository $users, ProfileUpdateData $data, int $userId): array
     {
@@ -30,14 +34,14 @@ final class ProfileValidator
         $v->required('email', $email, 'adresse e-mail')
             ->email('email', $email, 'Adresse e-mail')
             ->required('genre', $genre, 'genre')
-            ->required('orientation', $orientation, 'préférences')
+            ->required('orientation', $orientation, 'orientation')
             ->length('bio', $bio, 0, 500, 'Biographie');
 
         if (!in_array($genre, self::GENRES, true)) {
             $v->add('genre', 'Genre invalide.');
         }
         if ($orientation === null || !in_array($orientation, self::ORIENTATIONS, true)) {
-            $v->add('orientation', 'Préférences invalides.');
+            $v->add('orientation', 'Orientation invalide.');
         }
 
         if ($users->emailExists($email, $userId)) {

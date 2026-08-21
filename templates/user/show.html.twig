@@ -61,11 +61,11 @@
         <ul class="user-facts">
             <li>
                 <span aria-hidden="true">🎭</span>
-                Genre : {{ user.genre == 'homme' ? 'Homme' : (user.genre == 'femme' ? 'Femme' : (user.genre == 'autre' ? 'Autre' : 'Non renseigné')) }}
+                Genre : {{ gender_labels[user.genre] ?? 'Non renseigné' }}
             </li>
             <li>
                 <span aria-hidden="true">💞</span>
-                Préférences : {{ user.orientation == 'hetero' ? 'Hétérosexuel(le)' : (user.orientation == 'homo' ? 'Homosexuel(le)' : (user.orientation == 'bi' ? 'Bisexuel(le)' : 'Bisexuel(le) par défaut')) }}
+                Orientation : {{ orientation_labels[user.orientation] ?? 'Bisexuel·le par défaut' }}
             </li>
         </ul>
 

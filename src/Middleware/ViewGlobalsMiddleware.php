@@ -7,6 +7,7 @@ namespace App\Middleware;
 use App\Services\MessageService;
 use App\Services\NotificationService;
 use App\Support\Flash;
+use App\Support\ProfileLabels;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
@@ -38,6 +39,10 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
         $userId = $_SESSION['user_id'] ?? null;
         $env->addGlobal('current_user', $userId !== null ? ($_SESSION['user'] ?? null) : null);
         $env->addGlobal('csrf_token', $_SESSION['csrf_token'] ?? '');
+
+        // Libellés inclusifs genre / orientation (voir App\Support\ProfileLabels).
+        $env->addGlobal('gender_labels', ProfileLabels::GENRES);
+        $env->addGlobal('orientation_labels', ProfileLabels::ORIENTATIONS);
 
         // Flash messages (consumed on display).
         $env->addGlobal('flash', Flash::pull());

@@ -136,15 +136,44 @@ $palette = [
 // ------------------------------------------------------------
 // Orientation compatibility (identical to MatchingService)
 // ------------------------------------------------------------
+function genreBucket(?string $genre): ?string
+{
+    return match ($genre) {
+        'homme' => 'masculin',
+        'femme' => 'féminin',
+        'non-binaire', 'agenre', 'xénogenre', 'genre-fluide', 'autre' => 'non-binaire',
+        default => null,
+    };
+}
+
+function orientationKind(?string $orientation): string
+{
+    return match ($orientation) {
+        'hetero' => 'opposite',
+        'homo', 'gay', 'lesbienne' => 'same',
+        default => 'all',
+    };
+}
+
 function covers(?string $orientation, ?string $ownGenre, ?string $targetGenre): bool
 {
-    if ($targetGenre === null || $targetGenre === 'autre' || $orientation === null || $orientation === 'bi') {
-        return $targetGenre !== null;
-    }
-    if ($ownGenre === null || $ownGenre === 'autre') {
+    $target = genreBucket($targetGenre);
+    if ($target === null) {
         return false;
     }
-    return $orientation === 'homo' ? $ownGenre === $targetGenre : $ownGenre !== $targetGenre;
+    $kind = orientationKind($orientation);
+    if ($kind === 'all') {
+        return true;
+    }
+    $own = genreBucket($ownGenre);
+    if ($own === null) {
+        return false;
+    }
+    if ($kind === 'same') {
+        return $own === $target;
+    }
+    return ($own === 'masculin' && $target === 'féminin')
+        || ($own === 'féminin' && $target === 'masculin');
 }
 
 function orientationCompatible(array $a, array $b): bool
@@ -166,11 +195,34 @@ $now = time();
 echo "Generating $count profiles…\n";
 
 for ($i = 0; $i < $count; $i++) {
-    $genre = mt_rand(1, 100) <= 48 ? 'homme' : (mt_rand(1, 100) <= 92 ? 'femme' : 'autre');
+    $genreRand = mt_rand(1, 100);
+    if ($genreRand <= 45) {
+        $genre = 'homme';
+    } elseif ($genreRand <= 88) {
+        $genre = 'femme';
+    } else {
+        $others = ['non-binaire', 'agenre', 'xénogenre', 'genre-fluide', 'autre'];
+        $genre = $others[array_rand($others)];
+    }
     $o = mt_rand(1, 100);
-    $orientation = $o <= 42 ? 'hetero' : ($o <= 58 ? 'homo' : ($o <= 83 ? 'bi' : null));
+    $orientation = match (true) {
+        $o <= 40 => 'hetero',
+        $o <= 50 => 'gay',
+        $o <= 55 => 'lesbienne',
+        $o <= 75 => 'bi',
+        $o <= 83 => 'pan',
+        $o <= 88 => 'asexuel',
+        $o <= 92 => 'demisexuel',
+        $o <= 95 => 'questionnement',
+        $o <= 98 => 'autre',
+        default => null, // non renseigné = bi par défaut
+    };
 
-    $genderLabel = $genre === 'homme' ? 'male' : 'female';
+    $genderLabel = match ($genre) {
+        'homme' => 'male',
+        'femme' => 'female',
+        default => (mt_rand(0, 1) === 0 ? 'male' : 'female'),
+    };
     $prenom = $faker->firstName($genderLabel);
     $nom = $faker->lastName();
     $username = $faker->unique()->userName();

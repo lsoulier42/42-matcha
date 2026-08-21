@@ -88,16 +88,51 @@ final class MatchingService
         return true;
     }
 
-    /** Does $orientation cover the $target genre? (NULL = bi) */
+    /** Does $orientation cover the $target genre? (NULL or open orientations = all) */
     private function covers(?string $orientation, ?string $ownGenre, ?string $targetGenre): bool
     {
-        if ($targetGenre === null || $targetGenre === 'autre' || $orientation === null || $orientation === 'bi') {
-            return $targetGenre !== null; // unknown gender → no suggestion
+        $target = self::genreBucket($targetGenre);
+        if ($target === null) {
+            return false; // unknown gender → no suggestion
         }
-        if ($ownGenre === null || $ownGenre === 'autre') {
-            return false; // without a gender, hetero/homo cannot match
+        $kind = self::orientationKind($orientation);
+        if ($kind === 'all') {
+            return true; // bi, pan, asexuel, demisexuel, questionnement, autre, NULL
         }
-        return $orientation === 'homo' ? $ownGenre === $targetGenre : $ownGenre !== $targetGenre;
+        $own = self::genreBucket($ownGenre);
+        if ($own === null) {
+            return false; // without a gender, hetero/gay/lesbienne cannot match
+        }
+        if ($kind === 'same') {
+            return $own === $target; // gay / lesbienne (et legacy 'homo')
+        }
+        return ($own === 'masculin' && $target === 'féminin')
+            || ($own === 'féminin' && $target === 'masculin'); // hétéro : binaire opposé
+    }
+
+    /**
+     * Bucket de matching pour un genre : 'masculin', 'féminin' ou 'non-binaire'.
+     * Tous les genres non binaires (dont 'autre') partagent le même bucket
+     * pour la compatibilité d'orientation.
+     */
+    private static function genreBucket(?string $genre): ?string
+    {
+        return match ($genre) {
+            'homme' => 'masculin',
+            'femme' => 'féminin',
+            'non-binaire', 'agenre', 'xénogenre', 'genre-fluide', 'autre' => 'non-binaire',
+            default => null,
+        };
+    }
+
+    /** Catégorie de matching d'une orientation : 'opposite' | 'same' | 'all'. */
+    private static function orientationKind(?string $orientation): string
+    {
+        return match ($orientation) {
+            'hetero' => 'opposite',
+            'homo', 'gay', 'lesbienne' => 'same',
+            default => 'all',
+        };
     }
 
     /** Builds WHERE clause + parameters (filters: age, popularity, city, tags). */

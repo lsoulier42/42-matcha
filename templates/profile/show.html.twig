@@ -38,20 +38,23 @@
                 <label for="genre">Genre</label>
                 <select id="genre" name="genre" required>
                     <option value="" disabled {{ user.genre is empty ? 'selected' : '' }}>Choisir…</option>
-                    <option value="homme" {{ user.genre == 'homme' ? 'selected' : '' }}>Homme</option>
-                    <option value="femme" {{ user.genre == 'femme' ? 'selected' : '' }}>Femme</option>
-                    <option value="autre" {{ user.genre == 'autre' ? 'selected' : '' }}>Autre</option>
+                    {% for value, label in gender_labels %}
+                        <option value="{{ value }}" {{ user.genre == value ? 'selected' : '' }}>{{ label }}</option>
+                    {% endfor %}
                 </select>
+                <div class="form-error">Choisissez le genre qui vous correspond le mieux.</div>
             </div>
             <div class="form-field">
-                <label for="orientation">Préférences sexuelles</label>
+                <label for="orientation">Orientation sexuelle</label>
                 <select id="orientation" name="orientation" required>
                     <option value="" disabled {{ user.orientation is empty ? 'selected' : '' }}>Choisir…</option>
-                    <option value="hetero" {{ user.orientation == 'hetero' ? 'selected' : '' }}>Hétérosexuel(le)</option>
-                    <option value="homo" {{ user.orientation == 'homo' ? 'selected' : '' }}>Homosexuel(le)</option>
-                    <option value="bi" {{ user.orientation == 'bi' ? 'selected' : '' }}>Bisexuel(le)</option>
+                    {% for value, label in orientation_labels %}
+                        {% if value != 'homo' %}{# valeur legacy du seed, non proposée #}
+                            <option value="{{ value }}" {{ user.orientation == value ? 'selected' : '' }}>{{ label }}</option>
+                        {% endif %}
+                    {% endfor %}
                 </select>
-                <div class="form-error">Non renseigné = bisexuel par défaut pour les suggestions.</div>
+                <div class="form-error">Non renseigné = ouvert à tous par défaut pour les suggestions.</div>
             </div>
             <div class="form-field">
                 <label for="bio">Biographie</label>

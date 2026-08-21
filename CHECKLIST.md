@@ -23,7 +23,7 @@
 - [ ] En base : mots de passe hachés, jamais en clair.
 
 ## Profil
-- [ ] Complétion : genre, préférences sexuelles, biographie.
+- [ ] Complétion : genre, orientation sexuelle, biographie.
 - [ ] Tags : ajout de `#vegan`, `#geek`… → réutilisables (autocomplétion des tags existants).
 - [ ] Photos : jusqu'à 5, une désignée photo de profil.
 - [ ] Modification : nom, prénom, email, et toutes les infos profil — reflétées immédiatement.
@@ -34,7 +34,7 @@
 - [ ] Localisation modifiable depuis le profil.
 
 ## Navigation (suggestions)
-- [ ] Profil sans orientation → traité comme **bisexuel** (vérifier les suggestions).
+- [ ] Profil sans orientation → traité comme **ouvert·e à tous** (vérifier les suggestions).
 - [ ] Femme hétéro → suggestions uniquement masculines ; homme gay → uniquement masculines ; etc.
 - [ ] Suggestions priorisent : même zone géographique → tags partagés → popularité.
 - [ ] Tri par âge / localisation / popularité / tags communs : fonctionnel.
