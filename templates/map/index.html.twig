@@ -11,12 +11,14 @@
 <h1>Carte des utilisateurs</h1>
 
 {% if map.me is not null %}
-    <p class="search-hint">Votre position : <strong>{{ map.me.prenom }}</strong> — les marqueurs roses sont des profils suggérés, cliquez pour les découvrir.</p>
+    <p class="search-hint">Votre position : <strong>{{ map.me.prenom }}</strong> — les pastilles terracotta sont des profils suggérés (taille = popularité), cliquez pour les découvrir.</p>
 {% else %}
-    <div class="alert alert-info">
-        Ajoutez votre localisation (GPS ou manuelle) dans <a href="/profile">votre profil</a>
-        pour voir les profils autour de vous.
-    </div>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'map',
+        title: 'Ajoutez votre localisation',
+        text: 'Activez le GPS ou saisissez votre ville dans votre profil pour voir les profils autour de vous.',
+        cta: { label: 'Configurer ma localisation', href: '/profile' }
+    } %}
 {% endif %}
 
 <div id="map" class="interactive-map"></div>
@@ -46,6 +48,53 @@
             return;
         }
 
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Pastille ronde personnalisée (DESIGN.md §5.9) : initiale en
+        // Fraunces italique, taille + halo proportionnels à la popularité.
+        function pastille(prenom, size, extraClass) {
+            return L.divIcon({
+                className: '',
+                html: '<div class="map-pastille' + (extraClass ? ' ' + extraClass : '') + '"'
+                    + ' style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.34) + 'px;">'
+                    + escapeHtml(prenom.charAt(0).toUpperCase())
+                    + '</div>',
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+                popupAnchor: [0, -size / 2 - 4]
+            });
+        }
+
+        function popularityNumber(marker) {
+            var raw = parseFloat(String(marker.popularity_display || '0').replace(',', '.'));
+            return isNaN(raw) ? 0 : raw;
+        }
+
+        function pastilleSize(pop) {
+            return Math.round(Math.max(32, Math.min(50, 34 + pop * 1.4)));
+        }
+
+        function pastilleClass(pop) {
+            if (pop >= 7) { return 'popular'; }
+            if (pop <= 3) { return 'discreet'; }
+            return '';
+        }
+
+        function profilePopup(marker) {
+            var pop = popularityNumber(marker);
+            return '<strong>' + escapeHtml(marker.prenom) + '</strong><br>'
+                + (marker.ville ? escapeHtml(marker.ville) : 'Localisation inconnue') + '<br>'
+                + 'Popularité ' + escapeHtml(marker.popularity_display || pop.toFixed(1)) + '/10<br>'
+                + '<a href="/user/' + marker.id + '">Voir le profil</a>';
+        }
+
         var center = (me !== null)
             ? [me.lat, me.lng]
             : (markers.length > 0 ? [markers[0].lat, markers[0].lng] : [46.6, 2.4]);
@@ -57,19 +106,19 @@
         }).addTo(map);
 
         if (me !== null) {
-            L.marker([me.lat, me.lng], { title: me.prenom })
+            L.marker([me.lat, me.lng], { icon: pastille(me.prenom, 44, 'is-me'), title: me.prenom })
                 .addTo(map)
-                .bindPopup('<strong>' + me.prenom + '</strong><br>Vous');
+                .bindPopup('<strong>Vous</strong><br>' + escapeHtml(me.ville || ''));
         }
 
         markers.forEach(function (marker) {
-            var popup = '<strong>' + marker.prenom + '</strong><br>'
-                + (marker.ville || 'Localisation inconnue') + '<br>'
-                + '⭐ Popularité ' + marker.popularity_display + '/10<br>'
-                + '<a href="/user/' + marker.id + '">Voir le profil</a>';
-            L.marker([marker.lat, marker.lng], { title: marker.prenom })
+            var pop = popularityNumber(marker);
+            L.marker([marker.lat, marker.lng], {
+                icon: pastille(marker.prenom, pastilleSize(pop), pastilleClass(pop)),
+                title: marker.prenom
+            })
                 .addTo(map)
-                .bindPopup(popup);
+                .bindPopup(profilePopup(marker));
         });
     })();
 </script>

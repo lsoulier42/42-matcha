@@ -1,0 +1,13 @@
+{# ============================================================
+   Bulle de chat (DESIGN.md §5.8)
+   Usage : {% include 'partials/chat_bubble.html.twig' with { content, mine, time } %}
+   - content : texte du message
+   - mine    : true si l'utilisateur courant est l'émetteur (fond accent)
+   - time    : libellé horaire (ex. 14:32)
+   Le groupement des messages consécutifs d'un même auteur est géré en CSS pur
+   (sélecteurs frères) : coin « queue » et heure uniquement sur le dernier du groupe.
+   ============================================================ #}
+<div class="chat-message {{ mine ? 'mine' : 'theirs' }}">
+    <div class="chat-bubble">{{ content }}</div>
+    {% if time %}<time class="chat-time">{{ time }}</time>{% endif %}
+</div>

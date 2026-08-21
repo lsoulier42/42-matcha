@@ -15,6 +15,7 @@
                     {% else %}
                         <div class="avatar-placeholder small">{{ (item.actorPrenom ?? '?')|first|upper }}</div>
                     {% endif %}
+                    {% if not item.read %}<span class="unread-dot" aria-hidden="true"></span>{% endif %}
                 </div>
                 <div class="notification-body">
                     <div class="notification-text">
@@ -33,6 +34,10 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="alert alert-info">Aucune notification pour le moment.</div>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'bell',
+        title: 'Aucune notification',
+        text: 'Vous serez notifié(e) ici de vos likes, visites, messages et matchs.'
+    } %}
 {% endif %}
 {% endblock %}

@@ -84,3 +84,39 @@
 - [ ] Chat vidéo ou audio.
 - [ ] Planification de rendez-vous/événements entre matchés.
 - [ ] Chaque bonus : 100 % fonctionnel, sinon il ne compte pas.
+
+---
+
+## Refonte visuelle — design system (DESIGN.md)
+
+> Vérifier **dans Firefox ET Chrome**, desktop (≥ 1100 px) et mobile (≤ 720 px, DevTools).
+> Ne rien casser du comportement : les formulaires POST/CSRF et le GET des filtres restent identiques.
+
+## Palette & typographie
+- [x] Fond crème `#FBF6F1`, encres brunes chaudes (`#2E2A26` / `#7A7168`), **aucun bleu système** nulle part.
+- [x] Terracotta `#E3653F` : boutons primary, liens, badges, bulles « moi », pastilles carte, focus.
+- [x] Titres et marque en Fraunces (marque en italique) ; corps en Inter. Contraste serif/sans visible.
+- [x] Focus visible (clavier) : anneau terracotta sur liens, boutons, chips, inputs.
+
+## Navigation & layout
+- [x] Desktop : header sticky, liens en pilules, **page active surlignée** (accent-tint).
+- [x] Mobile : **barre d'onglets basse** (Suggestions, Recherche, Carte, Messages, Profil) + badges non-lus ; cloche notifications + déconnexion en icônes en haut.
+- [x] Le contenu n'est jamais masqué par la barre d'onglets fixe (padding-bas).
+
+## Composants
+- [x] **Carte profil grand format** (photo 4/5, nom Fraunces italic, teaser popularité discret, chips tags) sur suggestions, recherche, likes, visites.
+- [x] **Filtres en chips** : tri en radio, critères en pilules, tags togglables — le GET filtre bien.
+- [x] **Bulles de chat** : « moi » terracotta / « autre » blanc, coin queue, groupement des messages consécutifs (heure + queue seulement sur le dernier).
+- [x] **États vides illustrés** (SVG inline) sur toutes les listes vides — pas d'`alert-info` bleue.
+- [x] **Onboarding** : 4 slides scroll-snap + pastilles de navigation + CTA ; variante compacte connectée (page d'accueil).
+
+## Interactions (enhancement progressif)
+- [x] Like/Retirer sur profil public : **swipe animé** (LIKE/NOPE) puis POST ; **sans JS**, le formulaire fonctionne.
+- [x] **« C'est un match ! »** : overlay avec avatars qui se rejoignent, « 💬 Discuter » et « Continuer ».
+- [x] Carte : **pastilles rondes** (initiale Fraunces, halo = popularité), tuiles réchauffées (crème), popups arrondis.
+- [x] `prefers-reduced-motion` : les animations disparaissent.
+
+## Qualité
+- [x] Contrastes : texte `--ink-2` lisible sur blanc ; **blanc sur `--accent-dark`** (boutons, chips actives, badges — AA) ; **texte sur `--accent-tint`** (nav active, alertes info, tags, popularité) en `--accent-ink` `#B94523` (AA 4.53:1).
+- [x] Aucune erreur console / réseau sur les parcours : accueil, suggestions, profil, like → match → chat, carte, recherche filtrée.
+- [x] Mobile 360 px : rien ne déborde horizontalement (nav, grilles, chips, chat).

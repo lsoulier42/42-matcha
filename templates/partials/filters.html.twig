@@ -1,43 +1,78 @@
-{# Panneau tri + filtres (suggestions et recherche) #}
+{# ============================================================
+   Panneau de filtres en chips (DESIGN.md §6.5)
+   Usage : {% include 'partials/filters.html.twig' with { action: '/search', sort, filters, all_tags } %}
+   Paramètres GET inchangés côté serveur :
+   sort, age_min, age_max, popularity_min, ville, tags[]
+   ============================================================ #}
 <form method="get" action="{{ action }}" class="filter-panel" autocomplete="off">
-    <div class="filter-row">
-        <div class="form-field">
-            <label for="sort">Trier par</label>
-            <select id="sort" name="sort">
-                <option value="score" {{ sort == 'score' ? 'selected' : '' }}>Recommandés</option>
-                <option value="age" {{ sort == 'age' ? 'selected' : '' }}>Âge</option>
-                <option value="location" {{ sort == 'location' ? 'selected' : '' }}>Localisation (proximité)</option>
-                <option value="popularity" {{ sort == 'popularity' ? 'selected' : '' }}>Popularité</option>
-                <option value="tags" {{ sort == 'tags' ? 'selected' : '' }}>Tags communs</option>
-            </select>
+    <div class="filter-group">
+        <span class="filter-label">Trier par</span>
+        <div class="chip-row" role="radiogroup" aria-label="Trier par">
+            <label class="chip">
+                <input type="radio" name="sort" value="score" {{ sort == 'score' ? 'checked' : '' }}>
+                <span>Recommandés</span>
+            </label>
+            <label class="chip">
+                <input type="radio" name="sort" value="age" {{ sort == 'age' ? 'checked' : '' }}>
+                <span>Âge</span>
+            </label>
+            <label class="chip">
+                <input type="radio" name="sort" value="location" {{ sort == 'location' ? 'checked' : '' }}>
+                <span>Proximité</span>
+            </label>
+            <label class="chip">
+                <input type="radio" name="sort" value="popularity" {{ sort == 'popularity' ? 'checked' : '' }}>
+                <span>Popularité</span>
+            </label>
+            <label class="chip">
+                <input type="radio" name="sort" value="tags" {{ sort == 'tags' ? 'checked' : '' }}>
+                <span>Tags communs</span>
+            </label>
         </div>
-        <div class="form-field">
-            <label for="age_min">Âge min</label>
-            <input type="number" id="age_min" name="age_min" min="16" max="100" value="{{ filters.age_min }}" placeholder="18">
+    </div>
+
+    <div class="filter-group">
+        <span class="filter-label">Critères</span>
+        <div class="chip-row">
+            <label class="chip chip-input" title="Âge minimum">
+                <input type="number" name="age_min" min="16" max="100" value="{{ filters.age_min }}"
+                       placeholder="Âge min" aria-label="Âge minimum">
+            </label>
+            <span class="chip-sep" aria-hidden="true">–</span>
+            <label class="chip chip-input" title="Âge maximum">
+                <input type="number" name="age_max" min="16" max="100" value="{{ filters.age_max }}"
+                       placeholder="Âge max" aria-label="Âge maximum">
+            </label>
+            <label class="chip chip-input" title="Popularité minimale (0 à 10)">
+                <input type="number" name="popularity_min" min="0" max="10" step="0.5" value="{{ filters.popularity_min }}"
+                       placeholder="Pop. ≥ 3" aria-label="Popularité minimale">
+            </label>
+            <label class="chip chip-input chip-city" title="Ville / quartier">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 21s-7-5.1-7-11a7 7 0 0 1 14 0c0 5.9-7 11-7 11z"/>
+                    <circle cx="12" cy="10" r="2.6"/>
+                </svg>
+                <input type="text" name="ville" value="{{ filters.ville }}" maxlength="120"
+                       placeholder="Ville / quartier" aria-label="Ville ou quartier">
+            </label>
         </div>
-        <div class="form-field">
-            <label for="age_max">Âge max</label>
-            <input type="number" id="age_max" name="age_max" min="16" max="100" value="{{ filters.age_max }}" placeholder="45">
+    </div>
+
+    <div class="filter-group">
+        <span class="filter-label">Tags</span>
+        <div class="chip-row">
+            {% for tag in all_tags %}
+                <label class="chip">
+                    <input type="checkbox" name="tags[]" value="{{ tag }}" {{ tag in filters.tags ? 'checked' : '' }}>
+                    <span>#{{ tag }}</span>
+                </label>
+            {% endfor %}
         </div>
-        <div class="form-field">
-            <label for="popularity_min">Popularité min (0–10)</label>
-            <input type="number" id="popularity_min" name="popularity_min" min="0" max="10" step="0.5" value="{{ filters.popularity_min }}" placeholder="3">
-        </div>
-        <div class="form-field">
-            <label for="ville">Ville / quartier</label>
-            <input type="text" id="ville" name="ville" value="{{ filters.ville }}" maxlength="120" placeholder="Ex. Lyon">
-        </div>
-        <div class="form-field">
-            <label for="tags">Tags (au moins un)</label>
-            <select id="tags" name="tags[]" multiple size="4">
-                {% for tag in all_tags %}
-                    <option value="{{ tag }}" {{ tag in filters.tags ? 'selected' : '' }}>#{{ tag }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-actions">
-            <button class="btn btn-primary" type="submit">Filtrer</button>
-            <a class="btn btn-ghost" href="{{ action }}">Réinitialiser</a>
-        </div>
+    </div>
+
+    <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">Filtrer</button>
+        <a class="btn btn-ghost" href="{{ action }}">Réinitialiser</a>
     </div>
 </form>

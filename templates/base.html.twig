@@ -4,38 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ app_url }}/assets/css/style.css">
     {% block styles %}{% endblock %}
 </head>
 <body>
-<header class="site-header">
-    <div class="container header-inner">
-        <a class="brand" href="/">{{ app_name }}</a>
-        <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
-        <nav class="nav" id="main-nav">
-            {% if current_user %}
-                <a href="/suggestions">Suggestions</a>
-                <a href="/search">Recherche</a>
-                <a href="/map">Carte</a>
-                <a href="/messages" class="nav-item">
-                    Messages<span class="badge" data-badge="messages">{{ unread_messages > 0 ? unread_messages : '' }}</span>
-                </a>
-                <a href="/notifications" class="nav-item">
-                    Notifications<span class="badge" data-badge="notifs">{{ unread_notifs > 0 ? unread_notifs : '' }}</span>
-                </a>
-                <a href="/appointments">Rendez-vous</a>
-                <a href="/profile">Mon profil</a>
-                <form method="post" action="/logout" class="logout-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="nav-button">Déconnexion</button>
-                </form>
-            {% else %}
-                <a href="/auth/login">Connexion</a>
-                <a href="/auth/register">Inscription</a>
-            {% endif %}
-        </nav>
-    </div>
-</header>
+{% include 'partials/navbar.html.twig' %}
 
 <main class="container">
     {% if flash is defined %}

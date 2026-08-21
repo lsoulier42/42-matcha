@@ -8,24 +8,14 @@
 {% if visitors|length > 0 %}
     <div class="user-grid">
         {% for visitor in visitors %}
-            <a class="user-card" href="/user/{{ visitor.id }}">
-                <div class="user-avatar">
-                    {% if visitor.avatar %}
-                        <img src="{{ app_url }}{{ visitor.avatar }}" alt="{{ visitor.prenom }}">
-                    {% else %}
-                        <div class="avatar-placeholder">{{ visitor.prenom|first|upper }}</div>
-                    {% endif %}
-                </div>
-                <div class="user-info">
-                    <strong>{{ visitor.prenom }} ({{ visitor.age ?? '?' }})</strong>
-                    <span class="user-meta">{{ visitor.ville ?? 'Localisation inconnue' }}</span>
-                    <span class="user-meta">⭐ {{ visitor.popularityDisplay }}/10</span>
-                </div>
-                <time class="user-date">{{ visitor.date|date('d/m/Y H:i') }}</time>
-            </a>
+            {% include 'partials/profile_card.html.twig' with { user: visitor, date_label: visitor.date|date('d/m/Y H:i') } %}
         {% endfor %}
     </div>
 {% else %}
-    <div class="alert alert-info">Personne n'a encore consulté votre profil.</div>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'eye',
+        title: 'Personne n\'a encore consulté votre profil',
+        text: 'Complétez votre profil et soyez actif(ve) pour attirer les visites.'
+    } %}
 {% endif %}
 {% endblock %}

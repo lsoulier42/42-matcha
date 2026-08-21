@@ -10,13 +10,15 @@
 {% if profiles|length > 0 %}
     <div class="user-grid">
         {% for profile in profiles %}
-            {% include 'partials/user_card.html.twig' with { user: profile } %}
+            {% include 'partials/profile_card.html.twig' with { user: profile } %}
         {% endfor %}
     </div>
 {% else %}
-    <div class="alert alert-info">
-        Aucun profil ne correspond à vos critères pour le moment.
-        Complétez votre profil (genre, préférences, localisation, tags) pour de meilleures suggestions.
-    </div>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'search',
+        title: 'Aucune suggestion pour le moment',
+        text: 'Complétez votre profil (genre, préférences, localisation, tags) pour de meilleures suggestions.',
+        cta: { label: 'Compléter mon profil', href: '/profile' }
+    } %}
 {% endif %}
 {% endblock %}

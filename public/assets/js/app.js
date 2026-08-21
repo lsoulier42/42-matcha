@@ -1,23 +1,11 @@
 /**
  * Matcha — JS applicatif.
- *  - menu mobile
  *  - localisation : consentement GPS explicite (page profil)
  *  - autocomplétion des tags existants (page profil)
  *  - polling temps réel (badges, chat, notifications) — phase 6
  */
 (function () {
     'use strict';
-
-    /* ---------- Menu mobile ---------- */
-    const toggle = document.querySelector('.nav-toggle');
-    const nav = document.getElementById('main-nav');
-
-    if (toggle && nav) {
-        toggle.addEventListener('click', function () {
-            const open = nav.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-    }
 
     /* ---------- Géolocalisation (consentement explicite) ---------- */
     const btnGps = document.getElementById('btn-gps');
@@ -422,5 +410,68 @@
                 }
             }, POLL_INTERVAL);
         }
+    }
+
+    /* ---------- Profil public : swipe + écran « C'est un match ! » ----------
+       Enhancement progressif sur le like/unlike : le profil glisse
+       (is-liking / is-noping, tampon LIKE/NOPE), le POST part en fetch JSON ;
+       si le serveur signale un match, l'overlay « C'est un match ! » s'ouvre,
+       sinon on suit la redirection classique (flash conservés).
+       Sans JS ou hors réseau, le formulaire POST fonctionne tel quel. */
+    const userShow = document.querySelector('.user-show');
+
+    if (userShow) {
+        const matchOverlay = document.getElementById('match-overlay');
+
+        function showMatchOverlay(chatUrl, redirectUrl) {
+            if (!matchOverlay) {
+                window.location.href = redirectUrl;
+                return;
+            }
+            const chatLink = document.getElementById('match-chat');
+            const closeBtn = document.getElementById('match-close');
+            if (chatLink) { chatLink.href = chatUrl; }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    window.location.href = redirectUrl;
+                });
+            }
+            matchOverlay.classList.add('is-open');
+            if (chatLink) { chatLink.focus(); }
+        }
+
+        userShow.querySelectorAll('.swipe-form').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                userShow.classList.add(form.dataset.swipe === 'like' ? 'is-liking' : 'is-noping');
+
+                const body = new FormData(form);
+                const headers = { 'Accept': 'application/json' };
+                const csrfInput = form.querySelector('input[name="csrf_token"]');
+                if (csrfInput) { headers['X-CSRF-Token'] = csrfInput.value; }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        window.setTimeout(function () {
+                            if (data && data.ok && data.match && data.chat_url) {
+                                showMatchOverlay(data.chat_url, data.redirect);
+                            } else if (data && data.redirect) {
+                                window.location.href = data.redirect;
+                            } else {
+                                window.location.reload();
+                            }
+                        }, 360);
+                    })
+                    .catch(function () {
+                        // Réseau indisponible : soumission classique en secours.
+                        window.setTimeout(function () { form.submit(); }, 340);
+                    });
+            });
+        });
     }
 })();

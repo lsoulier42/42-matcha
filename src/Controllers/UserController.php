@@ -71,6 +71,7 @@ final class UserController
 
         $iLiked = $this->likes->exists($me, $id);
         $likedMe = $this->likes->exists($id, $me);
+        $myPhoto = $this->photos->profilePhoto($me);
 
         return $this->twig->render($response, 'user/show.html.twig', [
             'user' => UserProfile::fromUser($user),
@@ -79,6 +80,7 @@ final class UserController
             'i_liked' => $iLiked,
             'liked_me' => $likedMe,
             'is_match' => $iLiked && $likedMe,
+            'my_avatar' => $myPhoto?->path,
         ]);
     }
 
@@ -91,28 +93,31 @@ final class UserController
         $me = $request->getAttribute('user_id');
         $id = (int) ($args['id'] ?? 0);
         $back = $this->backUrl($request, $id);
+        $wantsJson = $this->wantsJson($request);
 
         if ($id === $me) {
-            return Http::redirect($response, $back);
+            return $this->likeReply($response, $wantsJson, $back, ['ok' => false]);
         }
         if ($this->blocks->isBlocked($me, $id)) {
             Flash::set('error', 'Action impossible sur ce profil.');
-            return Http::redirect($response, $back);
+            return $this->likeReply($response, $wantsJson, $back, ['ok' => false]);
         }
 
         // Spec requirement: without a profile photo, the like is rejected
         // SERVER-SIDE (not merely hidden in the UI).
         if (!$this->photos->hasProfilePhoto($me)) {
             Flash::set('error', 'Vous devez avoir une photo de profil pour liker un autre profil.');
-            return Http::redirect($response, $back);
+            return $this->likeReply($response, $wantsJson, $back, ['ok' => false]);
         }
 
+        $isMatch = false;
         if (!$this->likes->exists($me, $id)) {
             $this->likes->add($me, $id);
             $this->popularity->recompute($id);
 
             if ($this->likes->exists($id, $me)) {
                 // Mutual like: "connected", chat is unlocked.
+                $isMatch = true;
                 $this->notifications->notify($id, 'match', $me);
                 $this->notifications->notify($me, 'match', $id);
                 $this->popularity->recompute($me);
@@ -125,7 +130,30 @@ final class UserController
             Flash::set('info', 'Vous avez déjà liké ce profil.');
         }
 
-        return Http::redirect($response, $back);
+        return $this->likeReply($response, $wantsJson, $back, [
+            'ok' => true,
+            'match' => $isMatch,
+            'chat_url' => $isMatch ? '/messages/' . $id : null,
+        ]);
+    }
+
+    // -------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------
+
+    /**
+     * Like response: classic HTTP redirect (flash kept) or JSON payload
+     * for the progressive-enhancement match overlay.
+     */
+    private function likeReply(Response $response, bool $wantsJson, string $back, array $payload): Response
+    {
+        $payload['redirect'] = $back;
+        return $wantsJson ? Http::json($response, $payload) : Http::redirect($response, $back);
+    }
+
+    private function wantsJson(Request $request): bool
+    {
+        return str_contains($request->getHeaderLine('Accept'), 'application/json');
     }
 
     public function unlike(Request $request, Response $response, array $args): Response

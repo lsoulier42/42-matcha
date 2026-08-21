@@ -8,24 +8,14 @@
 {% if likers|length > 0 %}
     <div class="user-grid">
         {% for liker in likers %}
-            <a class="user-card" href="/user/{{ liker.id }}">
-                <div class="user-avatar">
-                    {% if liker.avatar %}
-                        <img src="{{ app_url }}{{ liker.avatar }}" alt="{{ liker.prenom }}">
-                    {% else %}
-                        <div class="avatar-placeholder">{{ liker.prenom|first|upper }}</div>
-                    {% endif %}
-                </div>
-                <div class="user-info">
-                    <strong>{{ liker.prenom }} ({{ liker.age ?? '?' }})</strong>
-                    <span class="user-meta">{{ liker.ville ?? 'Localisation inconnue' }}</span>
-                    <span class="user-meta">⭐ {{ liker.popularityDisplay }}/10</span>
-                </div>
-                <time class="user-date">{{ liker.date|date('d/m/Y H:i') }}</time>
-            </a>
+            {% include 'partials/profile_card.html.twig' with { user: liker, date_label: liker.date|date('d/m/Y H:i') } %}
         {% endfor %}
     </div>
 {% else %}
-    <div class="alert alert-info">Personne ne vous a encore liké.</div>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'heart',
+        title: 'Personne ne vous a encore liké',
+        text: 'Liker des profils et compléter votre profil augmente vos chances d\'être remarqué(e).'
+    } %}
 {% endif %}
 {% endblock %}

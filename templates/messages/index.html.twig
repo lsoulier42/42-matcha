@@ -8,13 +8,14 @@
 {% if conversations|length > 0 %}
     <div class="conversation-list">
         {% for conv in conversations %}
-            <a class="conversation-item" href="/messages/{{ conv.id }}">
+            <a class="conversation-item{{ current_path == '/messages/' ~ conv.id ? ' active' : '' }}" href="/messages/{{ conv.id }}">
                 <div class="conversation-avatar">
                     {% if conv.avatar %}
                         <img src="{{ app_url }}{{ conv.avatar }}" alt="{{ conv.prenom }}">
                     {% else %}
                         <div class="avatar-placeholder small">{{ conv.prenom|first|upper }}</div>
                     {% endif %}
+                    {% if conv.unread > 0 %}<span class="badge">{{ conv.unread }}</span>{% endif %}
                 </div>
                 <div class="conversation-body">
                     <div class="conversation-top">
@@ -22,7 +23,6 @@
                         <time>{{ conv.lastMessageAtLabel }}</time>
                     </div>
                     <div class="conversation-preview {{ conv.unread > 0 ? 'unread' : '' }}">
-                        {% if conv.unread > 0 %}<span class="badge">{{ conv.unread }}</span>{% endif %}
                         {{ conv.lastMessage ? conv.lastMessage : 'Dites bonjour 👋' }}
                     </div>
                 </div>
@@ -30,10 +30,11 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="alert alert-info">
-        Aucune conversation pour l'instant. Liker des profils pour déclencher un match :
-        le chat s'ouvre dès que vous êtes « connectés » avec quelqu'un.
-    </div>
-    <a class="btn btn-primary" href="/suggestions">Voir les suggestions</a>
+    {% include 'partials/empty_state.html.twig' with {
+        icon: 'chat',
+        title: 'Aucune conversation',
+        text: 'Liker des profils pour déclencher un match : le chat s\'ouvre dès que vous êtes « connectés » avec quelqu\'un.',
+        cta: { label: 'Voir les suggestions', href: '/suggestions' }
+    } %}
 {% endif %}
 {% endblock %}

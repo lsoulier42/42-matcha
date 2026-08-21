@@ -33,6 +33,7 @@ final class ViewGlobalsMiddleware implements MiddlewareInterface
 
         $env->addGlobal('app_name', $this->settings['app']['name']);
         $env->addGlobal('app_url', $this->settings['app']['url']);
+        $env->addGlobal('current_path', $request->getUri()->getPath());
 
         $userId = $_SESSION['user_id'] ?? null;
         $env->addGlobal('current_user', $userId !== null ? ($_SESSION['user'] ?? null) : null);

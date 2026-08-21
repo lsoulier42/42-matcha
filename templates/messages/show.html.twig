@@ -25,10 +25,11 @@
 
     <div class="chat-thread" id="chat-thread">
         {% for message in history %}
-            <div class="chat-message {{ message.fromUserId == current_user.id ? 'mine' : 'theirs' }}">
-                <div class="chat-bubble">{{ message.content }}</div>
-                <time class="chat-time">{{ message.sentAt|date('H:i') }}</time>
-            </div>
+            {% include 'partials/chat_bubble.html.twig' with {
+                content: message.content,
+                mine: message.fromUserId == current_user.id,
+                time: message.sentAt|date('H:i')
+            } %}
         {% endfor %}
     </div>
 
@@ -36,7 +37,13 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <textarea name="content" id="chat-input" rows="2" maxlength="2000"
                   placeholder="Écrivez votre message…" required></textarea>
-        <button class="btn btn-primary" type="submit">Envoyer</button>
+        <button class="btn-send" type="submit" aria-label="Envoyer le message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z"/>
+                <path d="M22 2 11 13"/>
+            </svg>
+        </button>
     </form>
 </div>
 {% endblock %}

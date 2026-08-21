@@ -30,10 +30,50 @@
 
 ## 🖼️ Aperçu
 
-| | |
+|                                                          |                                                            |
+|----------------------------------------------------------|------------------------------------------------------------|
+| ![Onboarding](gui-test-screenshots/p01-landing.png)      | ![Suggestions](gui-test-screenshots/p02-suggestions.png)   |
+| ![Profil public](gui-test-screenshots/p03-profil.png)    | ![Carte interactive](gui-test-screenshots/p04-carte-bonus.png) |
+| ![C'est un match !](gui-test-screenshots/p05-match.png)  | ![Chat](gui-test-screenshots/p06-chat.png)                 |
+
+## 🎨 Refonte visuelle
+
+Design system maison — **« la rencontre chaleureuse et premium »** : l'inverse du render froid et
+stérile, l'élégance de Hinge/Bumble avec une chaleur méditerranéenne. Tout le détail (décisions,
+phases d'implémentation, QA) est dans [`DESIGN.md`](DESIGN.md).
+
+### Design tokens (`:root` dans `public/assets/css/style.css`)
+
+| Famille | Tokens |
 |---|---|
-| ![Page d'accueil](gui-test-screenshots/p01-landing.png) | ![Suggestions](gui-test-screenshots/p02-suggestions.png) |
-| ![Chat temps réel](gui-test-screenshots/p03-chat-temps-reel.png) | ![Carte interactive](gui-test-screenshots/p04-carte-bonus.png) |
+| **Fonds** | `--bg` crème `#FBF6F1` · surfaces blanches `--surface` · `--surface-soft` `#F6EDE4` |
+| **Bordures** | `--line` `#EFE3D8` · `--line-strong` `#E0CDBB` |
+| **Terracotta** | `--accent` `#E3653F` (actions, liens) · `--accent-dark` `#C44E2B` (surfaces à texte blanc, AA) · `--accent-soft`/`--accent-tint` (fonds) · `--accent-ink` `#B94523` (texte sur fonds teintés, AA) |
+| **Sauge** | `--sage` `#8FA98E` (en ligne/matches, usage parcimonieux) · `--sage-soft`/`--sage-dark` |
+| **Encres** | `--ink` `#2E2A26` (brun chaud, jamais de noir pur) · `--ink-2` `#7A7168` · `--ink-3` `#A99E92` (décoratif) |
+| **Erreur / succès** | `--danger` `#B4452E` (brique, pas de rouge système) · `--success` `#5F8F5E` |
+| **Rayons / ombres** | `--r-*` 10 → 24 px + pilules · ombres `--shadow-1/2/3` teintées de brun, très douces |
+
+### Typographie
+
+Serif élégante **Fraunces** (italique pour la marque et les titres) + corps en **Inter** — le contraste
+chaud serif/sans est la signature « pas un projet d'école » (détails : [DESIGN.md §3](DESIGN.md)).
+
+### Composants clés (partials Twig réutilisables)
+
+- **Navbar** (`partials/navbar.html.twig`) : liens en pilules + page active surlignée ; mobile = **barre d'onglets basse** 5 items avec badges non-lus et `safe-area-inset-bottom`
+- **Carte profil grand format** (`partials/profile_card.html.twig`) : photo hero 4/5, scrim, nom Fraunces italic, **teaser de popularité discret**, chips tags
+- **Filtres en chips** (`partials/filters.html.twig`) : tri en radio, critères en pilules, tags togglables — noms de champs GET inchangés
+- **Bulles de chat** (`partials/chat_bubble.html.twig`) : coin queue, **groupement des messages consécutifs** en CSS pur (fonctionne aussi avec le polling)
+- **États vides illustrés** (`partials/empty_state.html.twig`) : 8 icônes SVG inline, variante compacte
+- **Écran « C'est un match ! »** : overlay plein écran, avatars qui se rejoignent, déclenché par l'enhancement JS du like
+- **Carte Leaflet stylée** (`map/index.html.twig`) : pastilles rondes `divIcon` (initiale Fraunces, halo proportionnel à la popularité), tuiles réchauffées par filtre CSS, popups arrondis
+
+### Qualité & accessibilité
+
+- **Contrastes AA** calculés sur les paires de tokens : blanc sur `--accent-dark` (4.7:1), `--accent-ink` sur `--accent-tint` (4.53:1), `--ink-2` sur blanc (4.78:1)
+- **Focus visible** au clavier (anneau terracotta) · `prefers-reduced-motion` respecté
+- **Enhancement progressif** : sans JS, tous les formulaires POST/CSRF et le GET des filtres fonctionnent tels quels
 
 ## 🛠️ Stack
 
@@ -265,10 +305,6 @@ Le compromis est la mini-lib `Db\Query` qui factorise les opérations CRUD rép�
 - **Sessions** : `session_regenerate_id()` à la connexion, cookies `HttpOnly` + `SameSite=Lax`
 - **Uploads** : magic bytes, renommage, dossier sans exécution de scripts
 - `.env` local exclu de git
-
-## 🧪 Tests
-
-Checklist complète des scénarios de test (soutenance) : **[CHECKLIST.md](CHECKLIST.md)**.
 
 ## 📄 Licence
 

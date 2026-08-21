@@ -6,7 +6,7 @@
 <h1>Rendez-vous</h1>
 
 <div class="appointments-grid">
-    <section class="form-card profile-card">
+    <section class="form-card profile-section">
         <h2>Planifier un rendez-vous</h2>
         <p class="search-hint">Uniquement avec des utilisateurs connectés (like mutuel).</p>
 
@@ -47,14 +47,16 @@
                 <button class="btn btn-primary" type="submit">Planifier</button>
             </form>
         {% else %}
-            <div class="alert alert-info">
-                Aucun match actif pour l'instant : planifiez des rendez-vous
-                avec vos « connectés ».
-            </div>
+            {% include 'partials/empty_state.html.twig' with {
+                icon: 'calendar',
+                title: 'Aucun match pour planifier',
+                text: 'Les rendez-vous se planifient avec vos « connectés » : liker des profils pour déclencher des matchs.',
+                compact: true
+            } %}
         {% endif %}
     </section>
 
-    <section class="form-card profile-card">
+    <section class="form-card profile-section">
         <h2>Mes rendez-vous</h2>
 
         {% if appointments|length > 0 %}
@@ -79,7 +81,12 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="alert alert-info">Aucun rendez-vous planifié pour l'instant.</div>
+            {% include 'partials/empty_state.html.twig' with {
+                icon: 'calendar',
+                title: 'Aucun rendez-vous planifié',
+                text: 'Planifiez un café, un cinéma ou une balade avec vos matchs.',
+                compact: true
+            } %}
         {% endif %}
     </section>
 </div>

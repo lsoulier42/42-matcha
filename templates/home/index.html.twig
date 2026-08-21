@@ -1,30 +1,141 @@
 {% extends 'base.html.twig' %}
 
 {% block content %}
-<section class="hero">
-    <h1>Rencontrez des personnes qui vous correspondent</h1>
-    <p>
-        Matcha vous suggère des profils selon votre orientation, votre localisation,
-        vos centres d'intérêt et votre popularité.
-    </p>
-    <div class="hero-actions">
-        <a class="btn btn-primary" href="/auth/register">Créer un compte</a>
-        <a class="btn btn-outline" href="/auth/login">Se connecter</a>
-    </div>
-</section>
+{% if current_user %}
+    {# ----- Variante compacte (utilisateur connecté) ----- #}
+    <section class="home-compact">
+        <h1 class="home-title">
+            Bienvenue{% if current_user.prenom %}, {{ current_user.prenom }}{% endif %} 👋
+        </h1>
+        <p class="home-lead">
+            De nouvelles rencontres vous attendent aujourd'hui. Retrouvez vos suggestions,
+            vos conversations et les profils autour de vous.
+        </p>
+        <div class="home-actions">
+            <a class="btn btn-primary" href="/suggestions">Voir les suggestions</a>
+            <a class="btn btn-outline" href="/messages">Mes messages</a>
+        </div>
+    </section>
+{% else %}
+    {# ----- Onboarding : slides de valeur (déconnecté) ----- #}
+    <section class="onboarding" aria-label="Découvrir Matcha">
+        <p class="onboarding-brand">{{ app_name }}</p>
 
-<section class="features">
-    <article class="feature-card">
-        <h2>Suggestions intelligentes</h2>
-        <p>Des profils triés par proximité, tags partagés et popularité.</p>
-    </article>
-    <article class="feature-card">
-        <h2>Chat en temps réel</h2>
-        <p>Discutez instantanément avec vos matchs, où que vous soyez.</p>
-    </article>
-    <article class="feature-card">
-        <h2>Recherche avancée</h2>
-        <p>Affinez par âge, popularité, localisation et centres d'intérêt.</p>
-    </article>
-</section>
+        <div class="onboarding-slides" id="onboarding-slides">
+            {# Slide 1 — suggestions intelligentes #}
+            <article class="onboarding-slide">
+                <svg class="onboarding-visual" viewBox="0 0 160 160" aria-hidden="true">
+                    <circle cx="80" cy="80" r="72" fill="var(--accent-tint)"/>
+                    <path d="M80 110s-27-18.5-27-39a15 15 0 0 1 27-8.5 15 15 0 0 1 27 8.5c0 20.5-27 39-27 39z" fill="var(--accent)"/>
+                    <path d="M118 36l2.6 6.2 6.2 2.6-6.2 2.6-2.6 6.2-2.6-6.2-6.2-2.6 6.2-2.6z" fill="var(--sage)"/>
+                    <path d="M40 28l2.2 5.2 5.2 2.2-5.2 2.2-2.2 5.2-2.2-5.2-5.2-2.2 5.2-2.2z" fill="var(--accent-soft)"/>
+                </svg>
+                <h2 class="onboarding-title">Des rencontres qui vous ressemblent</h2>
+                <p class="onboarding-text">
+                    Matcha vous suggère des profils selon vos centres d'intérêt,
+                    votre localisation et votre popularité.
+                </p>
+            </article>
+
+            {# Slide 2 — chat en temps réel #}
+            <article class="onboarding-slide">
+                <svg class="onboarding-visual" viewBox="0 0 160 160" aria-hidden="true">
+                    <circle cx="80" cy="80" r="72" fill="var(--sage-soft)"/>
+                    <path d="M50 54h60a10 10 0 0 1 10 10v26a10 10 0 0 1-10 10H74l-13 11v-11h-11a10 10 0 0 1-10-10V64a10 10 0 0 1 10-10z"
+                          fill="var(--surface)" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round"/>
+                    <circle cx="67" cy="77" r="4" fill="var(--accent)"/>
+                    <circle cx="80" cy="77" r="4" fill="var(--accent)"/>
+                    <circle cx="93" cy="77" r="4" fill="var(--accent)"/>
+                </svg>
+                <h2 class="onboarding-title">Des conversations qui commencent bien</h2>
+                <p class="onboarding-text">
+                    Discutez en temps réel avec vos matchs, où que vous soyez.
+                </p>
+            </article>
+
+            {# Slide 3 — géolocalisation #}
+            <article class="onboarding-slide">
+                <svg class="onboarding-visual" viewBox="0 0 160 160" aria-hidden="true">
+                    <circle cx="80" cy="80" r="72" fill="var(--accent-tint)"/>
+                    <circle cx="80" cy="80" r="46" fill="none" stroke="var(--accent-soft)" stroke-width="3"/>
+                    <circle cx="80" cy="80" r="30" fill="none" stroke="var(--accent-soft)" stroke-width="3"/>
+                    <path d="M80 112s-24-17.5-24-37a24 24 0 0 1 48 0c0 19.5-24 37-24 37z" fill="var(--accent)"/>
+                    <circle cx="80" cy="74" r="8" fill="var(--surface)"/>
+                </svg>
+                <h2 class="onboarding-title">Votre ville, vos gens</h2>
+                <p class="onboarding-text">
+                    Explorez les profils autour de vous sur une carte chaleureuse
+                    et stylée, sans froid ni système.
+                </p>
+            </article>
+
+            {# Slide 4 — popularité sans pression #}
+            <article class="onboarding-slide">
+                <svg class="onboarding-visual" viewBox="0 0 160 160" aria-hidden="true">
+                    <circle cx="80" cy="80" r="72" fill="var(--sage-soft)"/>
+                    <circle cx="80" cy="80" r="26" fill="var(--accent)"/>
+                    <g stroke="var(--accent)" stroke-width="5" stroke-linecap="round">
+                        <path d="M80 28v12M80 120v12M28 80h12M120 80h12M42 42l9 9M109 109l9 9M42 118l9-9M109 51l9-9"/>
+                    </g>
+                    <circle cx="118" cy="34" r="4" fill="var(--sage)"/>
+                </svg>
+                <h2 class="onboarding-title">La popularité, sans pression</h2>
+                <p class="onboarding-text">
+                    Votre note évolue naturellement au fil des likes et des matchs —
+                    affichée en toute discrétion.
+                </p>
+            </article>
+        </div>
+
+        <div class="onboarding-dots" role="tablist" aria-label="Choisir un écran de présentation">
+            <button class="dot is-active" type="button" data-slide="0" aria-label="Aller au premier écran"></button>
+            <button class="dot" type="button" data-slide="1" aria-label="Aller au deuxième écran"></button>
+            <button class="dot" type="button" data-slide="2" aria-label="Aller au troisième écran"></button>
+            <button class="dot" type="button" data-slide="3" aria-label="Aller au quatrième écran"></button>
+        </div>
+
+        <div class="home-actions">
+            <a class="btn btn-primary" href="/auth/register">Créer un compte</a>
+            <a class="btn btn-outline" href="/auth/login">Se connecter</a>
+        </div>
+    </section>
+
+    <script>
+        (function () {
+            'use strict';
+            var slides = document.getElementById('onboarding-slides');
+            var dots = document.querySelectorAll('.onboarding-dots .dot');
+            if (!slides || dots.length === 0) { return; }
+
+            function currentIndex() {
+                var w = slides.clientWidth || 1;
+                var idx = Math.round(slides.scrollLeft / w);
+                return Math.max(0, Math.min(dots.length - 1, idx));
+            }
+
+            function updateDots() {
+                var active = currentIndex();
+                dots.forEach(function (dot, i) {
+                    dot.classList.toggle('is-active', i === active);
+                });
+            }
+
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    slides.scrollTo({ left: Number(dot.dataset.slide) * slides.clientWidth, behavior: 'smooth' });
+                });
+            });
+
+            var ticking = false;
+            slides.addEventListener('scroll', function () {
+                if (!ticking) {
+                    window.requestAnimationFrame(function () { updateDots(); ticking = false; });
+                    ticking = true;
+                }
+            });
+            window.addEventListener('resize', updateDots);
+            updateDots();
+        })();
+    </script>
+{% endif %}
 {% endblock %}

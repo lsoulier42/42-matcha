@@ -1,0 +1,118 @@
+{# ============================================================
+   Navigation principale (partial réutilisable)
+   - Desktop : header sticky, liens en pilules, page active surlignée
+   - Mobile  : top bar (marque + rendez-vous + notifs + déconnexion)
+               + barre d'onglets basse à 5 entrées (pattern app de rencontre)
+   État actif via le global `current_path` (ViewGlobalsMiddleware).
+   ============================================================ #}
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="/">{{ app_name }}</a>
+
+        {# ----- Navigation desktop ----- #}
+        <nav class="nav" aria-label="Navigation principale">
+            {% if current_user %}
+                <a href="/suggestions" class="nav-link{{ current_path starts with '/suggestions' ? ' active' : '' }}">Suggestions</a>
+                <a href="/search" class="nav-link{{ current_path starts with '/search' ? ' active' : '' }}">Recherche</a>
+                <a href="/map" class="nav-link{{ current_path starts with '/map' ? ' active' : '' }}">Carte</a>
+                <a href="/messages" class="nav-link{{ current_path starts with '/messages' ? ' active' : '' }}">
+                    Messages{% if unread_messages > 0 %}<span class="badge">{{ unread_messages }}</span>{% endif %}
+                </a>
+                <a href="/notifications" class="nav-link{{ current_path starts with '/notifications' ? ' active' : '' }}">
+                    Notifications{% if unread_notifs > 0 %}<span class="badge">{{ unread_notifs }}</span>{% endif %}
+                </a>
+                <a href="/appointments" class="nav-link{{ current_path starts with '/appointments' ? ' active' : '' }}">Rendez-vous</a>
+                <a href="/profile" class="nav-link{{ current_path starts with '/profile' ? ' active' : '' }}">Mon profil</a>
+                <form method="post" action="/logout" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="nav-button">Déconnexion</button>
+                </form>
+            {% else %}
+                <a href="/auth/login" class="nav-link{{ current_path == '/auth/login' ? ' active' : '' }}">Connexion</a>
+                <a href="/auth/register" class="nav-link nav-cta{{ current_path == '/auth/register' ? ' active' : '' }}">Inscription</a>
+            {% endif %}
+        </nav>
+
+        {# ----- Actions compactes (mobile uniquement) ----- #}
+        {% if current_user %}
+            <div class="header-actions">
+                <a class="nav-link" href="/appointments">Rendez-vous</a>
+                <a class="icon-btn" href="/notifications" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6"/>
+                        <path d="M10 19a2.2 2.2 0 0 0 4 0"/>
+                    </svg>
+                    {% if unread_notifs > 0 %}<span class="badge">{{ unread_notifs }}</span>{% endif %}
+                </a>
+                <form method="post" action="/logout" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="icon-btn" aria-label="Se déconnecter">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/>
+                            <path d="m10 8-4 4 4 4"/>
+                            <path d="M6 12h11"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</header>
+
+{# ----- Barre d'onglets basse (mobile uniquement) ----- #}
+{% if current_user %}
+<nav class="bottom-tabs" aria-label="Navigation mobile">
+    <a href="/suggestions" class="tab{{ current_path starts with '/suggestions' ? ' active' : '' }}">
+        <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="m15.5 8.5-2 5-5 2 2-5z"/>
+            </svg>
+        </span>
+        <span class="tab-label">Suggestions</span>
+    </a>
+    <a href="/search" class="tab{{ current_path starts with '/search' ? ' active' : '' }}">
+        <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="m21 21-4.3-4.3"/>
+            </svg>
+        </span>
+        <span class="tab-label">Recherche</span>
+    </a>
+    <a href="/map" class="tab{{ current_path starts with '/map' ? ' active' : '' }}">
+        <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 21s-7-5.1-7-11a7 7 0 0 1 14 0c0 5.9-7 11-7 11z"/>
+                <circle cx="12" cy="10" r="2.6"/>
+            </svg>
+        </span>
+        <span class="tab-label">Carte</span>
+    </a>
+    <a href="/messages" class="tab{{ current_path starts with '/messages' ? ' active' : '' }}">
+        <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a8 8 0 0 1-8 8H4l2.3-2.9A8 8 0 1 1 21 12z"/>
+            </svg>
+            {% if unread_messages > 0 %}<span class="badge">{{ unread_messages }}</span>{% endif %}
+        </span>
+        <span class="tab-label">Messages</span>
+    </a>
+    <a href="/profile" class="tab{{ current_path starts with '/profile' ? ' active' : '' }}">
+        <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4.5 20.5a8 8 0 0 1 15 0"/>
+            </svg>
+        </span>
+        <span class="tab-label">Profil</span>
+    </a>
+</nav>
+{% endif %}
