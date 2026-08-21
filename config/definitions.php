@@ -76,7 +76,8 @@ return [
             $c->get(App\Services\PopularityService::class),
             $c->get(ProfileValidator::class),
             $c->get(LocationValidator::class),
-            $c->get(TagValidator::class)
+            $c->get(TagValidator::class),
+            $c->get(App\Services\ReverseGeocoder::class)
         );
     },
 

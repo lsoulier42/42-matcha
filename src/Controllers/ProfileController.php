@@ -14,6 +14,7 @@ use App\Repository\UserRepository;
 use App\Repository\VisitRepository;
 use App\Services\PhotoService;
 use App\Services\PopularityService;
+use App\Services\ReverseGeocoder;
 use App\Support\Flash;
 use App\Support\Http;
 use App\Validation\LocationValidator;
@@ -42,7 +43,8 @@ final class ProfileController
         private PopularityService $popularity,
         private ProfileValidator $profileValidator,
         private LocationValidator $locationValidator,
-        private TagValidator $tagValidator
+        private TagValidator $tagValidator,
+        private ReverseGeocoder $geocoder
     ) {
     }
 
@@ -92,10 +94,26 @@ final class ProfileController
             return Http::redirect($response, '/profile');
         }
 
-        $this->users->update($userId, $data->toRecord());
+        $record = $data->toRecord();
+
+        // GPS : déduire la ville réelle des coordonnées (géocodage inverse
+        // Nominatim/OSM). En cas d'échec (hors-ligne, zone inconnue), on garde
+        // la valeur saisie — les coordonnées restent la source de vérité.
+        $city = null;
+        if ($data->gpsConsent && $data->lat !== null && $data->lng !== null) {
+            $city = $this->geocoder->reverse($data->lat, $data->lng);
+            if ($city !== null) {
+                $record['ville'] = $city;
+            }
+        }
+
+        $this->users->update($userId, $record);
 
         $this->refreshSession($userId);
-        Flash::set('success', $data->gpsConsent ? 'Position GPS enregistrée.' : 'Localisation manuelle enregistrée.');
+        $flash = $data->gpsConsent
+            ? ($city !== null ? "Position GPS enregistrée — $city." : 'Position GPS enregistrée.')
+            : 'Localisation manuelle enregistrée.';
+        Flash::set('success', $flash);
         return Http::redirect($response, '/profile');
     }
 

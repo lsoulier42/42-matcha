@@ -12,7 +12,7 @@
     if (btnGps) {
         btnGps.addEventListener('click', function () {
             if (!('geolocation' in navigator)) {
-                alert('La géolocalisation n\'est pas supportée par ce navigateur. Saisissez votre ville manuellement.');
+                alert('La géolocalisation est indisponible : le site doit être ouvert en HTTPS (ou sur localhost). Vous pouvez saisir votre ville manuellement.');
                 return;
             }
             btnGps.disabled = true;
@@ -26,8 +26,11 @@
                     btnGps.textContent = '📍 Position GPS obtenue ✓';
                     btnGps.classList.add('btn-success');
                     const ville = document.getElementById('ville');
-                    if (ville && ville.value.trim() === '') {
-                        ville.placeholder = 'Votre ville / quartier (optionnel avec le GPS)';
+                    if (ville) {
+                        // La ville pré-remplie (ex. ville de la fixture) est périmée :
+                        // elle sera redétectée à l'enregistrement depuis les coordonnées.
+                        ville.value = '';
+                        ville.placeholder = 'Détectée automatiquement à l\'enregistrement';
                     }
                 },
                 function () {
