@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Cœur Matcha — forme originale, couleurs de la marque (terracotta) -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E3653F"/>
+      <stop offset="1" stop-color="#C44E2B"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#g)"
+        d="M16 28 C 7 21.5, 2.5 16, 2.5 10.5 C 2.5 6.5, 5.5 3.5, 9.5 3.5
+           C 12.3 3.5, 14.8 5, 16 7.2 C 17.2 5, 19.7 3.5, 22.5 3.5
+           C 26.5 3.5, 29.5 6.5, 29.5 10.5 C 29.5 16, 25 21.5, 16 28 Z"/>
+</svg>
