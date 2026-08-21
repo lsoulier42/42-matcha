@@ -518,6 +518,9 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
 }
 
 .photo-actions { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.45rem; }
+.photo-actions > form { width: 100%; }
+.photo-actions > form .btn { width: 100%; white-space: normal; }
+.photo-actions .btn { white-space: normal; }
 
 .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
@@ -615,8 +618,10 @@ main.container { flex: 1; padding: 1.5rem 0 2.5rem; }
 
 .drop-zone p { margin: 0; font-size: 0.9rem; }
 
-.photo-actions-row { display: flex; gap: 0.3rem; align-items: center; }
-.photo-actions-row form { margin: 0; }
+.photo-actions-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.photo-actions-row > * { flex: 1 1 auto; }
+.photo-actions-row form { margin: 0; display: flex; }
+.photo-actions-row form .btn { flex: 1; }
 
 .photo-editor {
     border-top: 1px solid var(--line);
